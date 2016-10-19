@@ -154,6 +154,7 @@ namespace SMU_Mapper.Classes
             string value = mAttribute.value;
 
             value = _ConvertAttributeString("attr.Element", value);
+            value = _ConvertVariableString("", value);
 
             string sb = "foreach(var attr in  {0}.Where(attr => attr.Attribute(\"{1}\") != null).Select(x=> new {{xAttr = x.Attribute(\"{2}\"),Element = x }})){{attr.xAttr.SetValue({3});}}";
 
@@ -271,6 +272,19 @@ namespace SMU_Mapper.Classes
                 return val;
         }
 
+        private static string _ConvertVariableString(string alias, string val)
+        {
+            if (val.Contains("$"))
+            {
+                string pattern = @"\$([\w]*)";
+                string result = Regex.Replace(val, pattern, alias + "VarLookup(\"" + "$1" + "\")");
+
+                return result;
+            }
+            else
+                return val;
+        }
+
         private static string _CleanCodeString(string alias, string val)
         {
             if (val == "") return "";
@@ -331,12 +345,14 @@ namespace SMU_Mapper.Classes
 
         private StringBuilder MapCode = new StringBuilder();
         private string LookupCode;
-
+        private string VariableCode;
 
         public void ConvertMaps(Maps maps)
         {
 
             LookupCode = ConvertLookups(maps);
+            VariableCode = ConvertVariables(maps.header);
+
 
             int i = 1;
             foreach (object m in maps.Items)
@@ -374,8 +390,11 @@ namespace SMU_Mapper.Classes
 
         private string ConvertVariables(Header h)
         {
+            var arVar = h.variable.Select(x => "{\"" + x.name + "\",@\"" + x.value + "\"}");
+            string list = string.Join(",", arVar);
 
-            return "";
+            return list;
+            
         }
 
         public CompilerResults Compile(string outFile)
@@ -395,6 +414,8 @@ namespace SMU_Mapper.Classes
             {{
                 public static Dictionary<string, Dictionary<string, string>> _lookups = LoadAllLookups({3});
 
+                public static Dictionary<string,string> _variables = new Dictionary<string,string>{{{5}}};
+
                 public static void Main(string[] args) 
                 {{
                     XElement {0} = XElement.Load(args[0]);
@@ -406,7 +427,7 @@ namespace SMU_Mapper.Classes
 
                     {0}.Save(args[1]);
                     
-                }}", Extensions.xmlFile, Extensions.queryName, MapCode, LookupCode, Extensions.AttrChkQueryName);
+                }}", Extensions.xmlFile, Extensions.queryName, MapCode, LookupCode, Extensions.AttrChkQueryName,VariableCode);
             
 
             Code.Append(@" 
@@ -443,6 +464,18 @@ namespace SMU_Mapper.Classes
                     return value;
 
                 }
+
+             private static string VarLookup(string name)
+             {
+                    string value = null;
+
+                    if (!_variables.TryGetValue(name, out value))
+                    {
+                        //variable not found
+                    }
+                    return value;
+
+            }
             }");
 
             CompilerResults results = csc.CompileAssemblyFromSource(parameters,
@@ -458,6 +491,6 @@ namespace SMU_Mapper.Classes
             return results;
         }
 
-
+        
     }
 }
