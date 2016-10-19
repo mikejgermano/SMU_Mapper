@@ -433,9 +433,26 @@ namespace SMU_Mapper.Classes
             Code.Append(@" 
                 private static Dictionary<string, string> LoadLookup(string path)
                 {
-                    Dictionary<string, string> d = new Dictionary<string, string>();
+                        Dictionary<string, string> LoadLookup_d = new Dictionary<string, string>();
+                        try
+                        {
+                            LoadLookup_d = System.IO.File.ReadAllLines(path).Select(x => x.Split('|')).ToDictionary(x => x[0], x => x[1]);
+      
+                            if(LoadLookup_d.Count() == 0)
+                            System.Console.WriteLine(""Warning - "" + System.IO.Path.GetFileName(path) + "" is empty"");
+                        }
+                        catch(System.IO.FileNotFoundException nf)
+                        {
+                            System.Console.WriteLine(""Error - loading lookups, couldn't find the lookup file.\nCheck that your path is correct:\n"" + nf.FileName);
+                            System.Environment.Exit(1);
+                        }
+                        catch (System.IndexOutOfRangeException e)
+                        {
+                            System.Console.WriteLine(""Error - loading lookup in "" + System.IO.Path.GetFileName(path) +  ""\n...most likely key/value pair is malformed"");
+                            System.Environment.Exit(1);
+                        }
 
-                    return System.IO.File.ReadAllLines(path).Select(x => x.Split('|')).ToDictionary(x => x[0], x => x[1]);
+                        return LoadLookup_d;
                 }
 
                 private static Dictionary<string, Dictionary<string, string>> LoadAllLookups(params string[][] lookups)
@@ -461,7 +478,7 @@ namespace SMU_Mapper.Classes
                         d1.TryGetValue(key, out value);
                     }
 
-                    return value;
+                    return value ?? key;
 
                 }
 
