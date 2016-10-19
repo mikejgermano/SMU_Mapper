@@ -10,13 +10,32 @@ using System.Text.RegularExpressions;
 namespace SMU_Mapper.Classes
 {
 
+
+
     public static class Extensions
     {
+
+
         public static string xmlFile = "_xml";
         public static string queryName = "_query";
         public static string AttrChkQueryName = "_AttrQuery";
 
-        public static StringBuilder Convert(this Map map)
+        public static StringBuilder Convert(this Script map, int i)
+        {
+            StringBuilder MapCode = new StringBuilder();
+
+             MapCode.AppendFormat(@"try
+             {{
+                 {0}
+             }}
+             catch(System.Exception ex)
+             {{
+                 throw new System.Exception(""Error in Script :"" + {1} + ""\nError: "" + ex.Message);}}", map.data,i.ToString());
+
+            return MapCode;
+        }
+
+        public static StringBuilder Convert(this Map map, int i)
         {
             StringBuilder MapCode = new StringBuilder();
 
@@ -31,12 +50,8 @@ namespace SMU_Mapper.Classes
             {
                 string ifs = map.srccheck.@if;
 
-
-
                 //build Where
                 where = ConvertIf("el", map.srccheck);
-
-
 
             }
 
@@ -59,7 +74,8 @@ namespace SMU_Mapper.Classes
             //Iteration
             StringBuilder Tasks = new StringBuilder();
 
-            if (map.Items!=null) {
+            if (map.Items != null)
+            {
                 foreach (var task in map.Items)
                 {
                     switch (task.GetType().Name)
@@ -104,8 +120,8 @@ namespace SMU_Mapper.Classes
             //Iteration
             StringBuilder Tasks = new StringBuilder();
 
-            
-            Tasks.AppendFormat("{0} = {1}.Where(el=>{2});",AttrChkQueryName,queryName,value);
+
+            Tasks.AppendFormat("{0} = {1}.Where(el=>{2});", AttrChkQueryName, queryName, value);
             Tasks.AppendFormat("foreach(var el in {0}){{", Extensions.AttrChkQueryName);
             foreach (var task in mCheck.Items)
             {
@@ -259,11 +275,11 @@ namespace SMU_Mapper.Classes
         {
             if (val == "") return "";
 
-            Dictionary<string, string> OperandsD = new Dictionary<string, string>() 
+            Dictionary<string, string> OperandsD = new Dictionary<string, string>()
             {
-	            {"AND", "&&"},
-	            {"OR", "||"}
-	        };
+                {"AND", "&&"},
+                {"OR", "||"}
+            };
 
             val = _ConvertAttributeString(alias, val);
             val = val.Replace("'", "\"");
@@ -291,9 +307,9 @@ namespace SMU_Mapper.Classes
 
                 if (opt != "")
                     right = conditions[i].Split(new string[] { "=", "!=" }, StringSplitOptions.RemoveEmptyEntries)[1].Trim();
-                
-                if(opt != "!=")
-                opt = opt.Replace("=", "==");
+
+                if (opt != "!=")
+                    opt = opt.Replace("=", "==");
 
                 right = right.Replace("'", "\"");
 
@@ -323,26 +339,43 @@ namespace SMU_Mapper.Classes
             LookupCode = ConvertLookups(maps);
 
             int i = 1;
-            foreach (Map m in maps.map)
+            foreach (object m in maps.Items)
             {
-                MapCode.AppendLine("\n\n// Map #" + i.ToString());
+                if (m.GetType().Name == "Map")
+                {
+                    MapCode.AppendLine("\n\n// Map :" + i.ToString());
 
-                MapCode.AppendLine(m.Convert().ToString());
+                    MapCode.AppendLine(((Map)m).Convert(i).ToString());
+                    i++;
+                }
+                else//Scripts
+                {
 
-                i++;
+                    MapCode.AppendLine("\n\n// Script :" + i.ToString());
+                    MapCode.AppendLine(((Script)m).Convert(i).ToString());
+                    MapCode.Append(";");
+                    i++;
+                }
+
             }
-        
+
 
         }
 
         private string ConvertLookups(Maps mMap)
         {
 
-            var arLookup = mMap.lookup.Select(x => "new string[2] {\"" + x.name + "\",@\"" + x.file + "\"}");
+            var arLookup = mMap.header.lookup.Select(x => "new string[2] {\"" + x.name + "\",@\"" + x.file + "\"}");
             string list = string.Join(",", arLookup);
 
             return list;
 
+        }
+
+        private string ConvertVariables(Header h)
+        {
+
+            return "";
         }
 
         public CompilerResults Compile(string outFile)
@@ -352,7 +385,7 @@ namespace SMU_Mapper.Classes
             parameters.GenerateExecutable = true;
 
             StringBuilder Code = new StringBuilder();
-           
+
             Code.AppendFormat(@"
             using System.Linq;
             using System.Xml.Linq;
@@ -374,7 +407,7 @@ namespace SMU_Mapper.Classes
                     {0}.Save(args[1]);
                     
                 }}", Extensions.xmlFile, Extensions.queryName, MapCode, LookupCode, Extensions.AttrChkQueryName);
-
+            
 
             Code.Append(@" 
                 private static Dictionary<string, string> LoadLookup(string path)
@@ -395,7 +428,6 @@ namespace SMU_Mapper.Classes
 
                     return d;
                 }
-
 
                 private static string Lookup(string name, string key)
                 {
@@ -418,9 +450,11 @@ namespace SMU_Mapper.Classes
 
             System.IO.File.WriteAllText("mapper.cs", Code.ToString());
 
-            results.Errors.Cast<CompilerError>().ToList().ForEach(error => Console.WriteLine(error.Line + ": " + error.ErrorText ));
+            results.Errors.Cast<CompilerError>().ToList().ForEach(error => Console.WriteLine(
+                error.Line + ": " + error.ErrorText
+                ));
 
-            
+
             return results;
         }
 

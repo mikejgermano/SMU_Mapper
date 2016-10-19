@@ -42,7 +42,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Classes\MapConverter.cs" />
-    <Compile Include="Classes\MML_Schema.cs" />
+    <None Include="Classes\MML_Schema.cs" />
     <Compile Include="CreateModel.cs" />
     <Compile Include="MMLReader.cs" />
     <Compile Include="Program.cs" />
@@ -52,6 +52,7 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
+    <Compile Include="Classes\MML_Schema2.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

@@ -85,9 +85,6 @@ namespace SMU_Mapper
         private void LoadMaps()
         {
 
-            var map = from el in MMLDoc.Descendants("map")
-                       select el;
-
             using (FileStream xmlStream = new FileStream(MapFile, FileMode.Open))
             {
                 using (XmlReader xmlReader = XmlReader.Create(xmlStream))
