@@ -64,7 +64,7 @@ namespace SMU_Mapper.Classes
 
             if (map.a != map.b)
             {
-                MapCode.AppendFormat("foreach(var el in {0}){{ el.Name = _ns + \"{1}\";}}", Extensions.queryName, map.b);
+                MapCode.AppendFormat("foreach(var el in {0}){{ el.Name = _ns + \"{1}\";el.SetAttributeValue(\"object_type\",\"{2}\");}}", Extensions.queryName, map.b,map.b);
                 query = "{0} = from el in _xml.Elements(_ns + \"{1}\") {2} select el;";
                 queryBuild = String.Format(query, queryName, map.b, where);
                 MapCode.AppendLine(queryBuild);
