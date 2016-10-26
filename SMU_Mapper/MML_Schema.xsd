@@ -4,10 +4,16 @@
     <xs:complexType>
       <xs:sequence>
         <xs:element name="header">
+          <xs:annotation>
+            <xs:documentation>Defines a container for introductory content.</xs:documentation>
+          </xs:annotation>
           <xs:complexType>
             <xs:sequence>
               <xs:choice minOccurs="0" maxOccurs="unbounded">
                 <xs:element maxOccurs="unbounded" name="lookup">
+                  <xs:annotation>
+                    <xs:documentation>Lookup defination for key/value pairs loaded from external file. Delimiter is a pipe "|".</xs:documentation>
+                  </xs:annotation>
                   <xs:complexType>
                     <xs:attribute name="file" use="required" >
                       <xs:simpleType>
@@ -27,6 +33,9 @@
                   </xs:complexType>
                 </xs:element>
                 <xs:element name="variable">
+                  <xs:annotation>
+                    <xs:documentation>Declares a variable of users specified name and value. Strings are surrounded by single quotes.</xs:documentation>
+                  </xs:annotation>
                   <xs:complexType>
                     <xs:attribute name="name" use="required" >
                       <xs:simpleType>
@@ -60,40 +69,72 @@
         </xs:element>
         <xs:choice maxOccurs="unbounded">
           <xs:element maxOccurs="unbounded" name="map">
+            <xs:annotation>
+              <xs:documentation>Mapping definition. Maps object type "a" to target "b" unless "a" and "b" are the same then type change is ignored.</xs:documentation>
+            </xs:annotation>
             <xs:complexType>
               <xs:sequence minOccurs="0">
+                <xs:element maxOccurs="unbounded" minOccurs="0" name="join">
+                  <xs:complexType>
+                    <xs:attribute name="obj" type="xs:string" use="required" />
+                    <xs:attribute name="from" type="xs:string" use="required" />
+                    <xs:attribute name="to" type="xs:string" use="required" />
+                  </xs:complexType>
+                </xs:element>
                 <xs:element maxOccurs="1" minOccurs="0" name="src-check">
+                  <xs:annotation>
+                    <xs:documentation>Query filtering on object.</xs:documentation>
+                  </xs:annotation>
                   <xs:complexType>
                     <xs:attribute name="if" type="xs:string" use="required" />
                   </xs:complexType>
                 </xs:element>
                 <xs:choice minOccurs="0" maxOccurs="unbounded">
                   <xs:element name="attribute">
+                    <xs:annotation>
+                      <xs:documentation>Single attribute definition. Sets the value of the named variable.</xs:documentation>
+                    </xs:annotation>
                     <xs:complexType>
                       <xs:attribute name="name" type="xs:string" use="required" />
                       <xs:attribute name="value" type="xs:string" use="required" />
                     </xs:complexType>
                   </xs:element>
                   <xs:element name="attr">
+                    <xs:annotation>
+                      <xs:documentation>Mapped attribute definition. Maps attribute "a" to target "b" .</xs:documentation>
+                    </xs:annotation>
                     <xs:complexType>
                       <xs:all>
-                        <xs:element minOccurs="0" name="copy" />
+                        <xs:element minOccurs="0" name="copy" >
+                          <xs:annotation>
+                            <xs:documentation>If copy is added, the "a" attribute is not replaced, but instead copied and a new attribute is created of value of mapping "b"</xs:documentation>
+                          </xs:annotation>
+                        </xs:element>
                         <xs:element minOccurs="1" name="a" type="xs:string" />
                         <xs:element minOccurs="1" name="b" type="xs:string" />
                       </xs:all>
                     </xs:complexType>
                   </xs:element>
                   <xs:element name="attr-check">
+                    <xs:annotation>
+                      <xs:documentation>Conditional check on attribute to determine attribute mappings.</xs:documentation>
+                    </xs:annotation>
                     <xs:complexType>
                       <xs:sequence>
                         <xs:choice maxOccurs="unbounded">
                           <xs:element name="attribute">
+                            <xs:annotation>
+                              <xs:documentation>Single attribute definition. Sets the value of the named variable.</xs:documentation>
+                            </xs:annotation>
                             <xs:complexType>
                               <xs:attribute name="name" type="xs:string" use="required" />
                               <xs:attribute name="value" type="xs:string" use="required" />
                             </xs:complexType>
                           </xs:element>
                           <xs:element name="attr">
+                            <xs:annotation>
+                              <xs:documentation>Mapped attribute definition. Maps attribute "a" to target "b".</xs:documentation>
+                            </xs:annotation>
                             <xs:complexType>
                               <xs:all>
                                 <xs:element minOccurs="0" name="copy" />
@@ -111,10 +152,17 @@
               </xs:sequence>
               <xs:attribute name="a" type="xs:string" use="required" />
               <xs:attribute name="b" type="xs:string" use="required" />
-              <xs:attribute name="map-class" type="xs:string" use="optional" default="no" />
             </xs:complexType>
+            <xs:unique name="oneJoinObj">
+              <xs:selector xpath="join"/>
+              <xs:field xpath="@obj"/>
+            </xs:unique>
           </xs:element>
-          <xs:element name="script" type="xs:string"/>
+          <xs:element name="script" type="xs:string">
+            <xs:annotation>
+              <xs:documentation>Used to embed custom code for mapping.</xs:documentation>
+            </xs:annotation>
+          </xs:element>
         </xs:choice>
       </xs:sequence>
     </xs:complexType>
