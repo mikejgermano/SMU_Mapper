@@ -41,7 +41,7 @@ namespace SMU_Mapper.Classes
 
             string query = "";
             //Query
-            query = "{0} = from el in _xml.Elements(_ns + \"{1}\") {2} select el;";
+            query = "{0} = from {3} in _xml.Elements(_ns + \"{1}\") {2} select {3};";
             //Joins
 
             //Where
@@ -51,26 +51,30 @@ namespace SMU_Mapper.Classes
                 string ifs = map.srccheck.@if;
 
                 //build Where
-                where = ConvertIf("el", map.srccheck);
+                where = ConvertIf(map.a, map.srccheck);
 
             }
 
 
-            string queryBuild = String.Format(query, queryName, map.a, where);
+            string queryBuild = String.Format(query, queryName, map.a, where,map.a);
 
             MapCode.AppendLine(queryBuild);
+
+            //Start the itteration
+            MapCode.AppendFormat("foreach(var {0} in {1}){{", map.b, Extensions.queryName);
 
             //Map-Class Name change
 
             if (map.a != map.b)
             {
-                MapCode.AppendFormat("foreach(var el in {0}){{ el.Name = _ns + \"{1}\";el.SetAttributeValue(\"object_type\",\"{2}\");}}", Extensions.queryName, map.b,map.b);
-                query = "{0} = from el in _xml.Elements(_ns + \"{1}\") {2} select el;";
-                queryBuild = String.Format(query, queryName, map.b, where);
-                MapCode.AppendLine(queryBuild);
+                MapCode.AppendFormat(" {1}.Name = _ns + \"{1}\";{1}.SetAttributeValue(\"object_type\",\"{2}\");", Extensions.queryName, map.b,map.b);
+                /*query = "{0} = from {1} in _xml.Elements(_ns + \"{1}\") {2} select {1};";
+                queryBuild = String.Format(query, queryName, map.b, "");
+                MapCode.AppendLine(queryBuild);*/
             }
 
 
+            
             //Iteration
             StringBuilder Tasks = new StringBuilder();
 
@@ -82,20 +86,20 @@ namespace SMU_Mapper.Classes
                     {
                         case "MapAttr":
                             {
-                                string q = ConvertMapAttr((MapAttr)task);
+                                string q = ConvertMapAttr((MapAttr)task,map.b);
                                 Tasks.AppendLine(q);
                                 break;
                             }
                         case "MapAttribute":
                             {
-                                string q = ConvertMapAttribute((MapAttribute)task);
+                                string q = ConvertMapAttribute((MapAttribute)task,map.b);
                                 Tasks.AppendLine(q);
 
                                 break;
                             }
                         case "MapAttrCheck":
                             {
-                                string q = ConvertMapAttrCheck((MapAttrCheck)task);
+                                string q = ConvertMapAttrCheck((MapAttrCheck)task,map.b);
                                 Tasks.AppendLine(q);
 
                                 break;
@@ -107,35 +111,35 @@ namespace SMU_Mapper.Classes
             }
 
             MapCode.AppendLine(Tasks.ToString());
-
+            MapCode.AppendLine("}");
             return MapCode;
         }
 
-        private static string ConvertMapAttrCheck(MapAttrCheck mCheck)
+        private static string ConvertMapAttrCheck(MapAttrCheck mCheck,string alias)
         {
             string value = mCheck.@if;
-            value = ConvertIf("el", mCheck);
+            value = ConvertIf(alias, mCheck);
 
 
             //Iteration
             StringBuilder Tasks = new StringBuilder();
 
 
-            Tasks.AppendFormat("{0} = {1}.Where(el=>{2});", AttrChkQueryName, queryName, value);
-            Tasks.AppendFormat("foreach(var el in {0}){{", Extensions.AttrChkQueryName);
+            //Tasks.AppendFormat("{0} = {1}.Where(el=>{2});", AttrChkQueryName, queryName, value);
+            Tasks.AppendFormat("if({0}){{", value);
             foreach (var task in mCheck.Items)
             {
                 switch (task.GetType().Name)
                 {
                     case "AttrCheckAttr":
                         {
-                            string q = ConvertMapAttr((AttrCheckAttr)task);
+                            string q = ConvertMapAttr((AttrCheckAttr)task,alias);
                             Tasks.AppendLine(q);
                             break;
                         }
                     case "AttrCheckAttribute":
                         {
-                            string q = ConvertMapAttribute((AttrCheckAttribute)task);
+                            string q = ConvertMapAttribute((AttrCheckAttribute)task,alias);
                             Tasks.AppendLine(q);
 
                             break;
@@ -149,49 +153,50 @@ namespace SMU_Mapper.Classes
             return Tasks.ToString();
         }
 
-        private static string ConvertMapAttribute(MapAttribute mAttribute)
+        private static string ConvertMapAttribute(MapAttribute mAttribute,string alias)
         {
             string value = mAttribute.value;
 
-            value = _ConvertAttributeString("attr.Element", value);
+            value = _ConvertAttributeString(alias, value);
             value = _ConvertVariableString("", value);
 
-            string sb = "foreach(var attr in  {0}.Where(attr => attr.Attribute(\"{1}\") != null).Select(x=> new {{xAttr = x.Attribute(\"{2}\"),Element = x }})){{attr.xAttr.SetValue({3});}}";
+            string sb = "{0}.SetAttributeValue(\"{1}\",{2});";
 
-            string queryBuild = String.Format(sb, queryName, mAttribute.name, mAttribute.name, value.Replace("'", "\""));
+            string queryBuild = String.Format(sb, alias, mAttribute.name, value.Replace("'", "\""));
 
             return queryBuild;
         }
 
-        private static string ConvertMapAttribute(AttrCheckAttribute mAttribute)
+        private static string ConvertMapAttribute(AttrCheckAttribute mAttribute,string alias)
         {
             string value = mAttribute.value;
 
-            value = _ConvertAttributeString("el", value);
+            value = _ConvertAttributeString(alias, value);
+            value = _ConvertVariableString("", value);
 
-            string sb = "if(el.Attribute(\"{0}\") != null){{var attr = el.Attribute(\"{0}\");attr.SetValue({1});}}";
+            string sb = "{0}.SetAttributeValue(\"{1}\",{2});";
 
-            string queryBuild = String.Format(sb, mAttribute.name, value.Replace("'", "\""));
+            string queryBuild = String.Format(sb, alias, mAttribute.name, value.Replace("'", "\""));
 
             return queryBuild;
         }
 
-        private static string ConvertMapAttr(MapAttr mAttr)
+        private static string ConvertMapAttr(MapAttr mAttr,string alias)
         {
 
             if (mAttr.copy == null)
             {
-                string sb = "foreach(var attr in  {0}.Where(attr => attr.Attribute(\"{1}\") != null).Select(x=> new {{xAttr = x.Attribute(\"{1}\"),Element = x }})){{attr.Element.SetAttributeValue(\"{2}\",attr.xAttr.Value);attr.xAttr.Remove();}}";
+                string sb = "{0}.SetAttributeValue(\"{1}\",{0}.Attribute(\"{2}\").Value);{0}.Attribute(\"{2}\").Remove();";
 
-                string queryBuild = String.Format(sb, queryName, mAttr.a, mAttr.b);
+                string queryBuild = String.Format(sb, alias, mAttr.b, mAttr.a);
 
                 return queryBuild;
             }
             else
             {
-                string sb = "foreach(var attr in  {0}.Where(attr => attr.Attribute(\"{1}\") != null).Select(x=> new {{xAttr = x.Attribute(\"{1}\"),Element = x }})){{attr.Element.SetAttributeValue(\"{2}\",attr.xAttr.Value);}}";
+                string sb = "{0}.SetAttributeValue(\"{1}\",{0}.Attribute(\"{2}\").Value);";
 
-                string queryBuild = String.Format(sb, queryName, mAttr.a, mAttr.b);
+                string queryBuild = String.Format(sb, alias, mAttr.b, mAttr.a);
 
                 return queryBuild;
             }
@@ -199,22 +204,21 @@ namespace SMU_Mapper.Classes
 
         }
 
-        private static string ConvertMapAttr(AttrCheckAttr mAttr)
+        private static string ConvertMapAttr(AttrCheckAttr mAttr,string alias)
         {
-
             if (mAttr.copy == null)
             {
-                string sb = "if(el.Attribute(\"{0}\") != null){{var attr = el.Attribute(\"{0}\");el.SetAttributeValue(\"{1}\",attr.Value);attr.Remove();}}";
+                string sb = "{0}.SetAttributeValue(\"{1}\",{0}.Attribute(\"{2}\").Value);{0}.Attribute(\"{2}\").Remove();";
 
-                string queryBuild = String.Format(sb, mAttr.a, mAttr.b);
+                string queryBuild = String.Format(sb, alias, mAttr.b, mAttr.a);
 
                 return queryBuild;
             }
             else
             {
-                string sb = "if(el.Attribute(\"{0}\") != null){{var attr = el.Attribute(\"{0}\");el.SetAttributeValue(\"{1}\",attr.Value);}}";
+                string sb = "{0}.SetAttributeValue(\"{1}\",{0}.Attribute(\"{2}\").Value);";
 
-                string queryBuild = String.Format(sb, mAttr.a, mAttr.b);
+                string queryBuild = String.Format(sb, alias, mAttr.b, mAttr.a);
 
                 return queryBuild;
             }
@@ -446,7 +450,7 @@ namespace SMU_Mapper.Classes
                             System.Console.WriteLine(""Error - loading lookups, couldn't find the lookup file.\nCheck that your path is correct:\n"" + nf.FileName);
                             System.Environment.Exit(1);
                         }
-                        catch (System.IndexOutOfRangeException e)
+                        catch (System.IndexOutOfRangeException)
                         {
                             System.Console.WriteLine(""Error - loading lookup in "" + System.IO.Path.GetFileName(path) +  ""\n...most likely key/value pair is malformed"");
                             System.Environment.Exit(1);
