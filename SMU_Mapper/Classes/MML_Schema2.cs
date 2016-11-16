@@ -213,7 +213,7 @@ public partial class Script
 
 
     /// <remarks/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("xsd", "4.0.30319.33440")]
+[System.CodeDom.Compiler.GeneratedCodeAttribute("xsd", "4.0.30319.33440")]
 [System.SerializableAttribute()]
 [System.Diagnostics.DebuggerStepThroughAttribute()]
 [System.ComponentModel.DesignerCategoryAttribute("code")]
@@ -222,6 +222,7 @@ public partial class Map
 {
 
     private SrcCheck srccheckField;
+    private SrcJoin[] srcJoinField;
 
     private object[] itemsField;
 
@@ -234,6 +235,20 @@ public partial class Map
     public Map()
     {
         this.mapclassField = "no";
+    }
+
+    /// <remarks/>
+    [System.Xml.Serialization.XmlElementAttribute("join")]
+    public SrcJoin[] srcjoin
+    {
+        get
+        {
+            return this.srcJoinField;
+        }
+        set
+        {
+            this.srcJoinField = value;
+        }
     }
 
     /// <remarks/>
@@ -308,6 +323,49 @@ public partial class Map
             this.mapclassField = value;
         }
     }
+}
+
+/// <remarks/>
+[System.CodeDom.Compiler.GeneratedCodeAttribute("xsd", "4.0.30319.33440")]
+[System.SerializableAttribute()]
+[System.Diagnostics.DebuggerStepThroughAttribute()]
+[System.ComponentModel.DesignerCategoryAttribute("code")]
+[System.Xml.Serialization.XmlTypeAttribute(AnonymousType = true)]
+public partial class SrcJoin
+{
+
+    private string onField;
+    private string objField;
+
+    /// <remarks/>
+    [System.Xml.Serialization.XmlAttributeAttribute()]
+    public string on
+    {
+        get
+        {
+            return this.onField;
+        }
+        set
+        {
+            this.onField = value;
+        }
+    }
+
+    /// <remarks/>
+    [System.Xml.Serialization.XmlAttributeAttribute()]
+    public string obj
+    {
+        get
+        {
+            return this.objField;
+        }
+        set
+        {
+            this.objField = value;
+        }
+    }
+
+    
 }
 
 /// <remarks/>

@@ -41,8 +41,10 @@ namespace SMU_Mapper.Classes
 
             string query = "";
             //Query
-            query = "{0} = from {3} in _xml.Elements(_ns + \"{1}\") {2} select {3};";
+            query = "{0} = from {3} in _xml.Elements(_ns + \"{1}\") {4} {2} select {3};";
             //Joins
+            string joins = "";
+            joins = ConvertJoin(map.a, map.srcjoin);
 
             //Where
             string where = "";
@@ -56,7 +58,7 @@ namespace SMU_Mapper.Classes
             }
 
 
-            string queryBuild = String.Format(query, queryName, map.a, where,map.a);
+            string queryBuild = String.Format(query, queryName, map.a, where,map.a,joins);
 
             MapCode.AppendLine(queryBuild);
 
@@ -237,6 +239,38 @@ namespace SMU_Mapper.Classes
             return val.Insert(0, "where ");
         }
 
+        private static string ConvertJoin(string alias, SrcJoin[] mval)
+        {
+            StringBuilder sb = new StringBuilder();
+
+            foreach(SrcJoin srcjoin in mval)
+            {
+
+                string obj = srcjoin.obj;
+                string on = srcjoin.on;
+
+                string join = "";
+
+                //patter from XSD
+                //join dataset in _xmlfile.Elements() on 
+
+                var groups = Regex.Match(on, @"^([a-zA-z0-9_]+)@([a-zA-z0-9_]+)(?:\s)*?=(?:\s)*?([a-zA-z0-9_]+)@([a-zA-z0-9_]+)$").Groups;
+
+                string leftObj   = groups[1].Value;
+                string leftAttr  = groups[2].Value;
+                string rightObj  = groups[3].Value;
+                string rightAttr = groups[4].Value;
+
+                join = string.Format("join {0} in {1}.Elements(_ns + \"{0}\") on {2}.Attribute(\"{3}\").Value equals {4}.Attribute(\"{5}\").Value",
+                    rightObj,xmlFile, leftObj,leftAttr,rightObj,rightAttr);
+
+                sb.AppendLine(join);
+            }
+
+
+            return sb.ToString();
+        }
+
         private static string ConvertIf(string alias, MapAttrCheck mval)
         {
             string val = mval.@if;
@@ -267,8 +301,13 @@ namespace SMU_Mapper.Classes
         {
             if (val.Contains("@"))
             {
+                string result = val;
+
+                string patternJoins = @"([a-zA-z0-9_]+)@([a-zA-z0-9_]+)";
+                result = Regex.Replace(result, patternJoins,  "$1.Attribute(\"" + "$2" + "\").Value");
+
                 string pattern = @"@([\w]*)";
-                string result = Regex.Replace(val, pattern, alias + ".Attribute(\"" + "$1" + "\").Value");
+                result = Regex.Replace(result, pattern, alias + ".Attribute(\"" + "$1" + "\").Value");
 
                 return result;
             }
@@ -330,6 +369,12 @@ namespace SMU_Mapper.Classes
                     opt = opt.Replace("=", "==");
 
                 right = right.Replace("'", "\"");
+
+                //existance check
+                if(right.ToUpper() == "NULL")
+                {
+                    left = left.Replace(".Value", "");
+                }
 
                 conditions[i] = left + opt + right;
             }
