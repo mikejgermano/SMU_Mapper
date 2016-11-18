@@ -682,12 +682,26 @@ namespace SMU_Mapper.Classes
         { }
         else
         {
+        
+            if(Val == """")
+            {
+                return """";
+            }
+         
+
             newPUID = attribute.Value;
 
             var els = _xml.Elements(_ns + ""ReleaseStatus"").Where(x => x.Attribute(""puid"").Value == attribute.Value);
 
             foreach (var el in els)
             {
+
+                if (Val == null)
+                {
+                    newPUID = """";
+                    el.Remove();
+                }
+                else
                 el.SetAttributeValue(""name"", Val);
             }
         }
