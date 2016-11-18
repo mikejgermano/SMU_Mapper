@@ -20,6 +20,18 @@ namespace SMU_Mapper.Classes
         public static string queryName = "_query";
         public static string AttrChkQueryName = "_AttrQuery";
 
+        public static Dictionary<string, string[]> refTable = new Dictionary<string, string[]>{
+        {"owning_user",         new string[2]{"User","user_id"}},
+        {"last_mod_user",       new string[2]{"User","user_id"}},
+        {"owning_group",        new string[2]{"Group","name"}},
+        {"uom_tag",             new string[2]{"UnitOfMeasure","symbol"}},
+        {"volume_tag",          new string[2]{"ImanVolume","volume_name"}},
+        //{"release_status_list", new string[2]{"ReleaseStatus","name"}},
+        {"dataset_type",        new string[2]{"DatasetType","datasettype_name"}},
+        {"relation_type",       new string[2]{"ImanType","type_name"}},
+        {"tool_used",           new string[2]{"Tool","object_name"}}
+        };
+
         public static StringBuilder Convert(this Script map, int i)
         {
             StringBuilder MapCode = new StringBuilder();
@@ -44,6 +56,7 @@ namespace SMU_Mapper.Classes
             query = "{0} = from {3} in _xml.Elements(_ns + \"{1}\") {4} {2} select {3};";
             //Joins
             string joins = "";
+            if(map.srcjoin != null)
             joins = ConvertJoin(map.a, map.srcjoin);
 
             //Where
@@ -159,8 +172,21 @@ namespace SMU_Mapper.Classes
         {
             string value = mAttribute.value;
 
+            
+
             value = _ConvertAttributeString(alias, value);
             value = _ConvertVariableString("", value);
+
+            //Check if reference attribute
+            if (refTable.ContainsKey(mAttribute.name) || mAttribute.name == "release_status_list")
+            {
+
+                if(mAttribute.name == "release_status_list")
+                    value = String.Format(@"_SetRelSts({0}.Attribute(""{1}""),{2})",alias, mAttribute.name,value);
+                else
+                    value = String.Format(@"_GetRef(""{0}"",{1})", mAttribute.name, value);
+
+            }
 
             string sb = "{0}.SetAttributeValue(\"{1}\",{2});";
 
@@ -175,6 +201,17 @@ namespace SMU_Mapper.Classes
 
             value = _ConvertAttributeString(alias, value);
             value = _ConvertVariableString("", value);
+
+            //Check if reference attribute
+            if (refTable.ContainsKey(mAttribute.name) || mAttribute.name == "release_status_list")
+            {
+
+                if (mAttribute.name == "release_status_list")
+                    value = String.Format(@"_SetRelSts({0}.Attribute(""{1}""),{2})", alias, mAttribute.name, value);
+                else
+                    value = String.Format(@"_GetRef(""{0}"",{1})", mAttribute.name, value);
+
+            }
 
             string sb = "{0}.SetAttributeValue(\"{1}\",{2});";
 
@@ -303,16 +340,45 @@ namespace SMU_Mapper.Classes
             {
                 string result = val;
 
+                string patternRefJoin = String.Format(@"([a-zA-z0-9_]+)@({0})",string.Join("|",refTable.Keys.ToArray()));
+                string patternRef = String.Format(@"@({0})", string.Join("|", refTable.Keys.ToArray()));
+
+                //check Release Status first
+                result = _RelStsReplace(result, @"([a-zA-z0-9_]+)@(release_status_list)");
+                result = _RelStsReplace(result, @"@(release_status_list)");
+
                 string patternJoins = @"([a-zA-z0-9_]+)@([a-zA-z0-9_]+)";
+                result = _RefReplace(result, patternRefJoin);
                 result = Regex.Replace(result, patternJoins,  "$1.Attribute(\"" + "$2" + "\").Value");
 
                 string pattern = @"@([\w]*)";
+                result = _RefReplace(result, patternRef);
                 result = Regex.Replace(result, pattern, alias + ".Attribute(\"" + "$1" + "\").Value");
+
+                result = result.Replace(".Attribute(\"release_status_list\").Value", ".Attribute(\"release_status_list\")");
 
                 return result;
             }
             else
                 return val;
+        }
+
+        private static string _RefReplace(string input,string pattern)
+        {
+            string gRef = "";
+
+            gRef = Regex.Replace(input, pattern, "_GetRefVal(\"" + "$1" + "\"," + "@" + "$1" + ")");
+
+            return gRef;
+        }
+
+        private static string _RelStsReplace(string input, string pattern)
+        {
+            string gRef = "";
+
+            gRef = Regex.Replace(input, pattern, "_GetRelSts(@" + "$1" + ")");
+
+            return gRef;
         }
 
         private static string _ConvertVariableString(string alias, string val)
@@ -446,6 +512,28 @@ namespace SMU_Mapper.Classes
             
         }
 
+        private string ConvertRefTable()
+        {
+            var refTbl = Extensions.refTable.ToList();
+            StringBuilder sb = new StringBuilder("public static Dictionary<string, string[]> refTable = new Dictionary<string, string[]>{\n");
+
+            foreach (var result in refTbl)
+            {
+                if (refTbl.IndexOf(result) == refTbl.Count - 1)
+                {
+                    //last item
+                    sb.AppendFormat(@"{{""{0}"",       new string[2]{{""{1}"",""{2}""}}}}", result.Key, result.Value[0], result.Value[1]);
+                }
+                else
+                    sb.AppendFormat(@"{{""{0}"",       new string[2]{{""{1}"",""{2}""}}}},", result.Key, result.Value[0], result.Value[1]);
+
+            }
+
+            sb.Append("};");
+
+            return sb.ToString(); ;
+        }
+
         public CompilerResults Compile(string outFile)
         {
             var csc = new CSharpCodeProvider(new Dictionary<string, string>() { { "CompilerVersion", "v3.5" } });
@@ -454,6 +542,9 @@ namespace SMU_Mapper.Classes
 
             StringBuilder Code = new StringBuilder();
 
+            //Reference Table info
+            string refTbl = ConvertRefTable();
+
             Code.AppendFormat(@"
             using System.Linq;
             using System.Xml.Linq;
@@ -461,14 +552,20 @@ namespace SMU_Mapper.Classes
             using System.Collections.Generic;
             class Program 
             {{
+                
+                private static XElement {0} = null;
+                private static XNamespace _ns = null;
+
                 public static Dictionary<string, Dictionary<string, string>> _lookups = LoadAllLookups({3});
 
                 public static Dictionary<string,string> _variables = new Dictionary<string,string>{{{5}}};
 
+                {6}
+
                 public static void Main(string[] args) 
                 {{
-                    XElement {0} = XElement.Load(args[0]);
-                    XNamespace _ns = {0}.GetDefaultNamespace();
+                    {0} = XElement.Load(args[0]);
+                    _ns = {0}.GetDefaultNamespace();
                     IEnumerable<XElement> {1} =  Enumerable.Empty<XElement>();
                     IEnumerable<XElement> {4} =  Enumerable.Empty<XElement>();
 
@@ -476,7 +573,7 @@ namespace SMU_Mapper.Classes
 
                     {0}.Save(args[1]);
                     
-                }}", Extensions.xmlFile, Extensions.queryName, MapCode, LookupCode, Extensions.AttrChkQueryName,VariableCode);
+                }}", Extensions.xmlFile, Extensions.queryName, MapCode, LookupCode, Extensions.AttrChkQueryName,VariableCode, refTbl.ToString());
             
 
             Code.Append(@" 
@@ -542,7 +639,78 @@ namespace SMU_Mapper.Classes
                     return value;
 
             }
-            }");
+
+         private static string _GetRefVal(string attribute,string elemid)
+         {
+            string value = """";
+
+            if (elemid == """") return """";
+
+            elemid = elemid.Replace(""#"", """");
+
+            string RefType = refTable[attribute][0];
+            string RefAttr = refTable[attribute][1];
+
+            value = (from el in _xml.Elements(_ns + RefType)
+                       where el.Attribute(""elemId"").Value == elemid
+                       select el.Attribute(RefAttr).Value).Single();
+
+
+
+                return value;
+        }
+
+
+    private static string _GetRelSts(XAttribute attribute)
+    {
+         if (attribute == null || attribute.Value == """") return """";
+
+        var els = _xml.Elements(_ns + ""ReleaseStatus"").Where(x => x.Attribute(""puid"").Value == attribute.Value).Select(x => x.Attribute(""name"").Value).ToArray();
+        string statuses = string.Join("","", els);
+
+            return statuses;
+
+        }
+
+    private static string _SetRelSts(XAttribute attribute, string Val)
+    {
+        string newPUID = """";
+
+        if (attribute == null || attribute.Value == """")
+        { }
+        else
+        {
+            newPUID = attribute.Value;
+
+            var els = _xml.Elements(_ns + ""ReleaseStatus"").Where(x => x.Attribute(""puid"").Value == attribute.Value);
+
+            foreach (var el in els)
+            {
+                el.SetAttributeValue(""name"", Val);
+            }
+        }
+
+        return newPUID;
+
+    }
+
+    private static string _GetRef(string attribute, string refVal){
+            string elemId = """";
+
+                if(refTable.ContainsKey(attribute))
+                {
+                    var dval = refTable[attribute];
+                    var el = " + Extensions.xmlFile + @".Elements(_ns + dval[0]).Where(x => x.Attribute(dval[1]).Value == refVal).Select(x => x.Attribute(""elemId"").Value);
+
+                    if (el.Count() == 1)
+                        elemId = el.Single();
+                    else
+                        return """";
+                }
+
+             return (""#"" + elemId);
+            }
+}");
 
             CompilerResults results = csc.CompileAssemblyFromSource(parameters,
             Code.ToString());
