@@ -663,13 +663,15 @@ namespace SMU_Mapper.Classes
 
     private static string _GetRelSts(XAttribute attribute)
     {
-         if (attribute == null || attribute.Value == """") return """";
+        try{ 
+        if (attribute == null || attribute.Value == """") return """";
 
         var els = _xml.Elements(_ns + ""ReleaseStatus"").Where(x => x.Attribute(""puid"").Value == attribute.Value).Select(x => x.Attribute(""name"").Value).ToArray();
         string statuses = string.Join("","", els);
 
             return statuses;
-
+        }
+        catch { return "";}
         }
 
     private static string _SetRelSts(XAttribute attribute, string Val)
