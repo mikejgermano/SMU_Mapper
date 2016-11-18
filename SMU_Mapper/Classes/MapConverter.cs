@@ -671,8 +671,8 @@ namespace SMU_Mapper.Classes
 
             return statuses;
         }
-        catch { return "";}
-        }
+        catch { return """";}
+     }
 
     private static string _SetRelSts(XAttribute attribute, string Val)
     {
