@@ -51,6 +51,8 @@ namespace SMU_Mapper.Classes
         {
             StringBuilder MapCode = new StringBuilder();
 
+            string[] _DontChangeName = new string[] {"Dataset","Form"};
+
             string query = "";
             //Query
             query = "{0} = from {3} in _xml.Elements(_ns + \"{1}\") {4} {2} select {3};";
@@ -82,7 +84,10 @@ namespace SMU_Mapper.Classes
 
             if (map.a != map.b)
             {
-                MapCode.AppendFormat(" {1}.Name = _ns + \"{1}\";{1}.SetAttributeValue(\"object_type\",\"{2}\");", Extensions.queryName, map.b,map.b);
+                if(_DontChangeName.Contains(map.a))
+                    MapCode.AppendFormat(" {1}.SetAttributeValue(\"object_type\",\"{2}\");", Extensions.queryName, map.b, map.b);
+                else
+                    MapCode.AppendFormat(" {1}.Name = _ns + \"{1}\";{1}.SetAttributeValue(\"object_type\",\"{2}\");", Extensions.queryName, map.b,map.b);
                 /*query = "{0} = from {1} in _xml.Elements(_ns + \"{1}\") {2} select {1};";
                 queryBuild = String.Format(query, queryName, map.b, "");
                 MapCode.AppendLine(queryBuild);*/
