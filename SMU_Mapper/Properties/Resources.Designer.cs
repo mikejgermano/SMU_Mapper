@@ -61,17 +61,54 @@ namespace SMU_Mapper.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to .
+        /// </summary>
+        internal static string AddChange {
+            get {
+                return ResourceManager.GetString("AddChange", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to public static bool CreateNewAccessDatabase()
+        ///    {
+        ///		return true;;
+        ///
+        ///		System.Console.WriteLine(&quot;CreateNewAccessDatabase()&quot;);
+        ///        bool result = false;
+        ///
+        ///        string connectionString = &quot;DataSource=\&quot;test.sdf\&quot;; Password=\&quot;mypassword\&quot;&quot;;
+        ///        SqlCeEngine en = new SqlCeEngine(connectionString);
+        ///        en.CreateDatabase();
+        ///
+        ///        SqlCeConnection conn = null;
+        ///
+        ///
+        ///        try
+        ///        {
+        ///            conn = new SqlCeConnection(connectionString);
+        ///            conn.Open();
+        ///
+        ///            SqlCe [rest of string was truncated]&quot;;.
+        /// </summary>
+        internal static string CreateAccesDatabase {
+            get {
+                return ResourceManager.GetString("CreateAccesDatabase", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to &lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
         ///&lt;xs:schema attributeFormDefault=&quot;unqualified&quot; elementFormDefault=&quot;qualified&quot; xmlns:xs=&quot;http://www.w3.org/2001/XMLSchema&quot; xmlns:mstns=&quot;http://tempuri.org/myschema/unique&quot;&gt;
         ///  &lt;xs:element name=&quot;maps&quot;&gt;
         ///    &lt;xs:complexType&gt;
         ///      &lt;xs:sequence&gt;
         ///        &lt;xs:element name=&quot;header&quot;&gt;
+        ///          &lt;xs:annotation&gt;
+        ///            &lt;xs:documentation&gt;Defines a container for introductory content.&lt;/xs:documentation&gt;
+        ///          &lt;/xs:annotation&gt;
         ///          &lt;xs:complexType&gt;
-        ///            &lt;xs:sequence&gt;
-        ///              &lt;xs:choice minOccurs=&quot;0&quot; maxOccurs=&quot;unbounded&quot;&gt;
-        ///                &lt;xs:element maxOccurs=&quot;unbounded&quot; name=&quot;lookup&quot;&gt;
-        ///          [rest of string was truncated]&quot;;.
+        ///            &lt;x [rest of string was truncated]&quot;;.
         /// </summary>
         internal static string MMLSchema {
             get {

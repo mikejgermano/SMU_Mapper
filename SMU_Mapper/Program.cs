@@ -11,13 +11,12 @@ namespace SMU_Mapper
             try
             {
 
-                //CreateModel
-                //CreateModel.Create(@"C:\Users\germano\Desktop\mapper\Model\srcD-model.xml","src-ItemModel.txt");
+                //CreateModel.Create(@"D:\Work\ATO\mapper\Model\Amway-model.xml", "src-ItemModel.txt");
                 //CreateModel.Schema(@"C:\Users\germano\Desktop\mapper\TCXML_Schema\Denso\source_TCXML.xsd", "src-attributes.xml");
 
-                //CreateModel.Create(@"C:\Users\germano\Desktop\mapper\Model\tgtD-model.xml", "target-ItemModel.txt");
+                CreateModel.Create(@"D:\Work\ATO\mapper\Model\tgtD-model.xml", "target-ItemModel.txt");
                 //CreateModel.Schema(@"C:\Users\germano\Desktop\mapper\TCXML_Schema\Denso\target_TCXML.xsd", "target-attributes.xml");
-                
+                //return;
 
                 //Read MML File
                 string file = args[0];

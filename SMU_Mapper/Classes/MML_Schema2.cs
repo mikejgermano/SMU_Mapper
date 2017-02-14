@@ -103,18 +103,24 @@ public partial class Header
             this.lookupField = value;
         }
     }
-    /*/// <remarks/>
-    [System.Xml.Serialization.XmlElementAttribute("function", typeof(string))]
-    [System.Xml.Serialization.XmlElementAttribute("lookup", typeof(HeaderLookup))]
-    [System.Xml.Serialization.XmlElementAttribute("variable", typeof(HeaderVariable))]
-    public object[] Items {
-        get {
-            return this.itemsField;
+
+    private HeaderFunction[] functionField;
+    /// <remarks/>
+    [System.Xml.Serialization.XmlElementAttribute("function")]
+    public HeaderFunction[] function
+    {
+        get
+        {
+            return this.functionField;
         }
-        set {
-            this.itemsField = value;
+        set
+        {
+            this.functionField = value;
         }
-    }*/
+    }
+
+
+
 }
 
 /// <remarks/>
@@ -197,8 +203,22 @@ public partial class HeaderVariable
     }
 }
 
-    /// <remarks/>
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("xsd", "4.6.1055.0")]
+/// <remarks/>
+[System.CodeDom.Compiler.GeneratedCodeAttribute("xsd", "4.6.1055.0")]
+[System.SerializableAttribute()]
+[System.Diagnostics.DebuggerStepThroughAttribute()]
+[System.ComponentModel.DesignerCategoryAttribute("code")]
+[System.Xml.Serialization.XmlTypeAttribute(AnonymousType = true)]
+public partial class HeaderFunction
+{
+    [XmlText]
+    public string data = "";
+
+
+}
+
+/// <remarks/>
+[System.CodeDom.Compiler.GeneratedCodeAttribute("xsd", "4.6.1055.0")]
 [System.SerializableAttribute()]
 [System.Diagnostics.DebuggerStepThroughAttribute()]
 [System.ComponentModel.DesignerCategoryAttribute("code")]

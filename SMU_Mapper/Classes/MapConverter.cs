@@ -84,11 +84,14 @@ namespace SMU_Mapper.Classes
 
             if (map.a != map.b)
             {
-                if(_DontChangeName.Contains(map.a))
+                if (_DontChangeName.Contains(map.a))
                     MapCode.AppendFormat(" {1}.SetAttributeValue(\"object_type\",\"{2}\");", Extensions.queryName, map.b, map.b);
                 else
-                    MapCode.AppendFormat(" {1}.Name = _ns + \"{1}\";{1}.SetAttributeValue(\"object_type\",\"{2}\");", Extensions.queryName, map.b,map.b);
-                /*query = "{0} = from {1} in _xml.Elements(_ns + \"{1}\") {2} select {1};";
+                {
+                    MapCode.AppendFormat(" {1}.Name = _ns + \"{1}\";{1}.SetAttributeValue(\"object_type\",\"{2}\");", Extensions.queryName, map.b, map.b);
+                    MapCode.AppendFormat(" _RecordTypeChange({0}.Attribute(\"puid\").Value,\"{1}\",\"{2}\");", map.b, map.a,map.b);
+                }
+                    /*query = "{0} = from {1} in _xml.Elements(_ns + \"{1}\") {2} select {1};";
                 queryBuild = String.Format(query, queryName, map.b, "");
                 MapCode.AppendLine(queryBuild);*/
             }
@@ -464,12 +467,13 @@ namespace SMU_Mapper.Classes
     {
 
         private StringBuilder MapCode = new StringBuilder();
+        private string FunctionCode;
         private string LookupCode;
         private string VariableCode;
 
         public void ConvertMaps(Maps maps)
         {
-
+            FunctionCode = ConvertFunctions(maps.header);
             LookupCode = ConvertLookups(maps);
             VariableCode = ConvertVariables(maps.header);
 
@@ -500,6 +504,8 @@ namespace SMU_Mapper.Classes
 
         private string ConvertLookups(Maps mMap)
         {
+            if (mMap.header.lookup == null)
+                return "";
 
             var arLookup = mMap.header.lookup.Select(x => "new string[2] {\"" + x.name + "\",@\"" + x.file + "\"}");
             string list = string.Join(",", arLookup);
@@ -508,8 +514,24 @@ namespace SMU_Mapper.Classes
 
         }
 
+        private string ConvertFunctions(Header h)
+        {
+            if (h.function == null)
+                return "";
+
+            var arVar = String.Join(Environment.NewLine, h.function.Select(x => x.data));
+          
+
+            return arVar;
+
+        }
+
         private string ConvertVariables(Header h)
         {
+
+            if (h.variable == null)
+                return "";
+
             var arVar = h.variable.Select(x => "{\"" + x.name + "\",@\"" + x.value + "\"}");
             string list = string.Join(",", arVar);
 
@@ -541,9 +563,17 @@ namespace SMU_Mapper.Classes
 
         public CompilerResults Compile(string outFile)
         {
-            var csc = new CSharpCodeProvider(new Dictionary<string, string>() { { "CompilerVersion", "v3.5" } });
-            var parameters = new CompilerParameters(new[] { "System.dll", "mscorlib.dll", "System.Core.dll", "System.Xml.dll", "System.Xml.Linq.dll" }, outFile, false);
+            string CreateAccesDatabase = Properties.Resources.CreateAccesDatabase;
+            string functions; 
+
+            var csc = new CSharpCodeProvider(new Dictionary<string, string>() { { "CompilerVersion", "v4.0" }, { "Platform", "x64" } });
+            var parameters = new CompilerParameters(new[] { "System.dll", "mscorlib.dll", "System.Core.dll", "System.Xml.dll", "System.Xml.Linq.dll","System.Data.dll"}, outFile, false);
+            parameters.ReferencedAssemblies.Add(@"System.Data.SqlServerCe.dll");
+            
+
             parameters.GenerateExecutable = true;
+            parameters.IncludeDebugInformation = true;
+            parameters.CompilerOptions = "/platform:x64";
 
             StringBuilder Code = new StringBuilder();
 
@@ -555,9 +585,12 @@ namespace SMU_Mapper.Classes
             using System.Xml.Linq;
             using System.Collections;
             using System.Collections.Generic;
+            using System.Data.SqlServerCe;
+            
             class Program 
             {{
-                
+                                
+
                 private static XElement {0} = null;
                 private static XNamespace _ns = null;
 
@@ -565,10 +598,15 @@ namespace SMU_Mapper.Classes
 
                 public static Dictionary<string,string> _variables = new Dictionary<string,string>{{{5}}};
 
+                public static Dictionary<string,string[]> _TypeChangeLog = new Dictionary<string,string[]>();
+
                 {6}
 
                 public static void Main(string[] args) 
                 {{
+                    
+                    bool db_result = CreateNewAccessDatabase();
+                    
                     {0} = XElement.Load(args[0]);
                     _ns = {0}.GetDefaultNamespace();
                     IEnumerable<XElement> {1} =  Enumerable.Empty<XElement>();
@@ -731,7 +769,19 @@ namespace SMU_Mapper.Classes
 
              return (""#"" + elemId);
             }
-}");
+
+    private static void _RecordTypeChange(string puid, string from, string to)
+    {
+            _TypeChangeLog[puid] = new string[2]{from,to};
+    }
+
+");
+
+Code.AppendLine(FunctionCode);
+
+Code.AppendLine(CreateAccesDatabase);
+
+Code.Append("}");
 
             CompilerResults results = csc.CompileAssemblyFromSource(parameters,
             Code.ToString());

@@ -9,6 +9,60 @@
           </xs:annotation>
           <xs:complexType>
             <xs:sequence>
+              <xs:element name="model" minOccurs="0" maxOccurs="1">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element minOccurs="0" maxOccurs="unbounded" name="class">
+                      <xs:complexType>
+                        <xs:simpleContent>
+                          <xs:extension base="xs:string">
+                            <xs:attribute name="item" use="required">
+                              <xs:simpleType>
+                                <xs:restriction base="xs:string">
+                                  <xs:minLength value="1"/>
+                                  <xs:pattern value="[a-zA-Z0-9_]+"/>
+                                </xs:restriction>
+                              </xs:simpleType>
+                            </xs:attribute>
+                            <xs:attribute name="masterform" use="required" >
+                              <xs:simpleType>
+                                <xs:restriction base="xs:string">
+                                  <xs:minLength value="1"/>
+                                  <xs:pattern value="([a-zA-Z0-9_]+)\|([a-zA-Z0-9_]+)"/>
+                                </xs:restriction>
+                              </xs:simpleType>
+                            </xs:attribute>
+                            <xs:attribute name="itemrevision" use="required" >
+                              <xs:simpleType>
+                                <xs:restriction base="xs:string">
+                                  <xs:minLength value="1"/>
+                                  <xs:pattern value="[a-zA-Z0-9_]+"/>
+                                </xs:restriction>
+                              </xs:simpleType>
+                            </xs:attribute>
+                            <xs:attribute name="masterform-rev" use="required" >
+                              <xs:simpleType>
+                                <xs:restriction base="xs:string">
+                                  <xs:minLength value="1"/>
+                                  <xs:pattern value="([a-zA-Z0-9_]+)\|([a-zA-Z0-9_]+)"/>
+                                </xs:restriction>
+                              </xs:simpleType>
+                            </xs:attribute>
+                          </xs:extension>
+                        </xs:simpleContent>
+                      </xs:complexType>
+                    </xs:element>
+                  </xs:sequence>
+                </xs:complexType>
+                <xs:unique name="oneClassRev">
+                  <xs:selector xpath="class"/>
+                  <xs:field xpath="@itemrevision"/>
+                </xs:unique>
+                <xs:unique name="oneClassItem">
+                  <xs:selector xpath="class"/>
+                  <xs:field xpath="@item"/>
+                </xs:unique>
+              </xs:element>
               <xs:choice minOccurs="0" maxOccurs="unbounded">
                 <xs:element maxOccurs="unbounded" name="lookup">
                   <xs:annotation>
@@ -58,10 +112,10 @@
               </xs:choice>
             </xs:sequence>
           </xs:complexType>
-            <xs:unique name="oneVaribleName">
-              <xs:selector xpath="variable"/>
-              <xs:field xpath="@name"/>
-            </xs:unique>
+          <xs:unique name="oneVaribleName">
+            <xs:selector xpath="variable"/>
+            <xs:field xpath="@name"/>
+          </xs:unique>
           <xs:unique name="oneLookupName">
             <xs:selector xpath="lookup"/>
             <xs:field xpath="@name"/>
@@ -101,7 +155,14 @@
                       <xs:documentation>Single attribute definition. Sets the value of the named variable.</xs:documentation>
                     </xs:annotation>
                     <xs:complexType>
-                      <xs:attribute name="name" type="xs:string" use="required" />
+                      <xs:attribute name="name" use="required" >
+                        <xs:simpleType>
+                          <xs:restriction base="xs:string">
+                            <xs:minLength value="1"/>
+                            <xs:pattern value="[a-zA-Z0-9_]+"/>
+                          </xs:restriction>
+                        </xs:simpleType>
+                      </xs:attribute>
                       <xs:attribute name="value" use="required" >
                         <xs:simpleType>
                           <xs:restriction base="xs:string">
@@ -122,8 +183,22 @@
                             <xs:documentation>If copy is added, the "a" attribute is not replaced, but instead copied and a new attribute is created of value of mapping "b"</xs:documentation>
                           </xs:annotation>
                         </xs:element>
-                        <xs:element minOccurs="1" name="a" type="xs:string" />
-                        <xs:element minOccurs="1" name="b" type="xs:string" />
+                        <xs:element minOccurs="1" name="a" >
+                          <xs:simpleType>
+                            <xs:restriction base="xs:string">
+                              <xs:minLength value="1"/>
+                              <xs:pattern value="[a-zA-Z0-9_]+"/>
+                            </xs:restriction>
+                          </xs:simpleType>
+                        </xs:element>
+                        <xs:element minOccurs="1" name="b" >
+                          <xs:simpleType>
+                            <xs:restriction base="xs:string">
+                              <xs:minLength value="1"/>
+                              <xs:pattern value="[a-zA-Z0-9_]+"/>
+                            </xs:restriction>
+                          </xs:simpleType>
+                        </xs:element>
                       </xs:all>
                     </xs:complexType>
                   </xs:element>
@@ -139,7 +214,14 @@
                               <xs:documentation>Single attribute definition. Sets the value of the named variable.</xs:documentation>
                             </xs:annotation>
                             <xs:complexType>
-                              <xs:attribute name="name" type="xs:string" use="required" />
+                              <xs:attribute name="name" use="required" >
+                                <xs:simpleType>
+                                  <xs:restriction base="xs:string">
+                                    <xs:minLength value="1"/>
+                                    <xs:pattern value="[a-zA-Z0-9_]+"/>
+                                  </xs:restriction>
+                                </xs:simpleType>
+                              </xs:attribute>
                               <xs:attribute name="value" use="required" >
                                 <xs:simpleType>
                                   <xs:restriction base="xs:string">
@@ -156,8 +238,22 @@
                             <xs:complexType>
                               <xs:all>
                                 <xs:element minOccurs="0" name="copy" />
-                                <xs:element minOccurs="1" name="a" type="xs:string" />
-                                <xs:element minOccurs="1" name="b" type="xs:string" />
+                                <xs:element minOccurs="1" name="a" >
+                                  <xs:simpleType>
+                                    <xs:restriction base="xs:string">
+                                      <xs:minLength value="1"/>
+                                      <xs:pattern value="[a-zA-Z0-9_]+"/>
+                                    </xs:restriction>
+                                  </xs:simpleType>
+                                </xs:element>
+                                <xs:element minOccurs="1" name="b" >
+                                  <xs:simpleType>
+                                    <xs:restriction base="xs:string">
+                                      <xs:minLength value="1"/>
+                                      <xs:pattern value="[a-zA-Z0-9_]+"/>
+                                    </xs:restriction>
+                                  </xs:simpleType>
+                                </xs:element>
                               </xs:all>
                             </xs:complexType>
                           </xs:element>
@@ -168,8 +264,22 @@
                   </xs:element>
                 </xs:choice>
               </xs:sequence>
-              <xs:attribute name="a" type="xs:string" use="required" />
-              <xs:attribute name="b" type="xs:string" use="required" />
+              <xs:attribute name="a" use="required" >
+                <xs:simpleType>
+                  <xs:restriction base="xs:string">
+                    <xs:minLength value="1"/>
+                    <xs:pattern value="[a-zA-Z0-9_]+"/>
+                  </xs:restriction>
+                </xs:simpleType>
+              </xs:attribute>
+              <xs:attribute name="b" use="required" >
+                <xs:simpleType>
+                  <xs:restriction base="xs:string">
+                    <xs:minLength value="1"/>
+                    <xs:pattern value="[a-zA-Z0-9_]+"/>
+                  </xs:restriction>
+                </xs:simpleType>
+              </xs:attribute>
             </xs:complexType>
             <xs:unique name="oneJoinObj">
               <xs:selector xpath="join"/>
