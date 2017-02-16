@@ -1,0 +1,103 @@
+static class Classes
+{
+    public static XElement _xml = null;
+    public static XNamespace _ns;
+    public static string _IMAN_master_form;
+
+    static private XElement[] _getMasterForm(XElement obj, string StorageClass)
+    {
+        var MasterForm = (from im in _xml.Elements(_ns + "ImanRelation")
+                          join mForm in _xml.Elements(_ns + "Form") on im.Attribute("secondary_object").Value equals mForm.Attribute("puid").Value
+                          join mFormS in _xml.Elements(_ns + StorageClass) on mForm.Attribute("data_file").Value equals mFormS.Attribute("puid").Value into mf1
+                          from mFormS in mf1.DefaultIfEmpty()
+                          where obj.Attribute("puid").Value == im.Attribute("primary_object").Value && im.Attribute("relation_type").Value == _IMAN_master_form
+                          select new XElement[2] { mForm, mFormS }).Single();
+
+        return MasterForm;
+    }
+
+    public class ItemClass
+    {
+        public XElement element;
+        public ItemMasterFormClass masterForm;
+        public IEnumerable<RevisionClass> revisions;
+
+        public ItemClass(XElement xitem, string srev,string smasterFormS, string smasterRevFormS)
+        {
+            element = xitem;
+            masterForm = new ItemMasterFormClass(element, smasterFormS);
+            revisions = _getItemRevisions(element, srev, smasterRevFormS);
+        }
+
+        private static IEnumerable<Classes.RevisionClass> _getItemRevisions(XElement item,string sRev, string StorageClass)
+        {
+
+            var Revisions = from rev in _xml.Elements(_ns + sRev)
+                            join irm in _xml.Elements(_ns + "ImanRelation") on rev.Attribute("puid").Value equals irm.Attribute("primary_object").Value
+                            join mFormRev in _xml.Elements(_ns + "Form") on irm.Attribute("secondary_object").Value equals mFormRev.Attribute("puid").Value
+                            join mFormRevS in _xml.Elements(_ns + StorageClass) on mFormRev.Attribute("data_file").Value equals mFormRevS.Attribute("puid").Value into mf2
+                            from mFormRevS in mf2.DefaultIfEmpty()
+                            where irm.Attribute("relation_type").Value == _IMAN_master_form && rev.Attribute("items_tag").Value == item.Attribute("puid").Value
+                            select new Classes.RevisionClass { element = rev, masterRevForm = new RevisionClass.ItemRevMasterFormClass() { element = mFormRev, storage = mFormRevS } };
+
+            return Revisions;
+        }
+    }
+
+    public class ItemMasterFormClass
+    {
+        public XElement element;
+        public XElement storage;
+
+        public ItemMasterFormClass(XElement item, string smasterFormS)
+        {
+            var forms = _getMasterForm(item, smasterFormS);
+            element = forms[0];
+            storage = forms[1];
+        }
+    }
+
+    public class RevisionClass
+    {
+        public ItemClass item;
+        public XElement element;
+        public ItemRevMasterFormClass masterRevForm;
+
+        public RevisionClass() { }
+
+        public RevisionClass(XElement xrevision,string sitem, string srev,string sMasterFormS, string sMasterRevFormS)
+        {
+            element = xrevision;
+
+            masterRevForm = new ItemRevMasterFormClass(element, sMasterRevFormS);
+
+            item = _getItem(element, sitem, srev, sMasterFormS, sMasterRevFormS);
+        }
+
+
+        public class ItemRevMasterFormClass
+        {
+            public XElement element;
+            public XElement storage;
+
+            public ItemRevMasterFormClass() { }
+
+            public ItemRevMasterFormClass(XElement rev, string sMasterFormS)
+            {
+                var forms = _getMasterForm(rev, sMasterFormS);
+                element = forms[0];
+                storage = forms[1];
+            }
+        }
+
+        private static ItemClass _getItem(XElement rev,string sitem,string srev,string sMasterFormS,string smasterRevFormS)
+        {
+            ItemClass qItem = (from item in _xml.Elements(_ns + sitem)
+                               where item.Attribute("puid").Value == rev.Attribute("items_tag").Value
+                               select new ItemClass(item, srev, sMasterFormS, smasterRevFormS)).Single();
+
+            return qItem;
+        }
+
+    }
+}

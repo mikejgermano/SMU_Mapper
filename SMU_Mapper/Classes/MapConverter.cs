@@ -11,7 +11,6 @@ namespace SMU_Mapper.Classes
 {
 
 
-
     public static class Extensions
     {
 
@@ -19,6 +18,7 @@ namespace SMU_Mapper.Classes
         public static string xmlFile = "_xml";
         public static string queryName = "_query";
         public static string AttrChkQueryName = "_AttrQuery";
+        public static HeaderModel model;
 
         public static Dictionary<string, string[]> refTable = new Dictionary<string, string[]>{
         {"owning_user",         new string[2]{"User","user_id"}},
@@ -32,34 +32,37 @@ namespace SMU_Mapper.Classes
         {"tool_used",           new string[2]{"Tool","object_name"}}
         };
 
-        public static StringBuilder Convert(this Script map, int i)
-        {
-            StringBuilder MapCode = new StringBuilder();
-
-             MapCode.AppendFormat(@"try
-             {{
-                 {0}
-             }}
-             catch(System.Exception ex)
-             {{
-                 throw new System.Exception(""Error in Script :"" + {1} + ""\nError: "" + ex.Message);}}", map.data,i.ToString());
-
-            return MapCode;
-        }
 
         public static StringBuilder Convert(this Map map, int i)
         {
             StringBuilder MapCode = new StringBuilder();
 
-            string[] _DontChangeName = new string[] {"Dataset","Form"};
+            string[] _DontChangeName = new string[] { "Dataset", "Form" };
+
+            //Change other TC Class types
+            string tcTypeS = model.getTcType(map.a);
+            ModelClass mClassS = null;
+
+            if (tcTypeS != "")
+            {
+                mClassS = model.getTcModel(map.a);
+            }
+
+            string tcTypeT = model.getTcType(map.b);
+            ModelClass mClassT = null;
+           
+            if(tcTypeT != "")
+            {
+                mClassT = model.getTcModel(map.b);
+            }
 
             string query = "";
             //Query
             query = "{0} = from {3} in _xml.Elements(_ns + \"{1}\") {4} {2} select {3};";
             //Joins
             string joins = "";
-            if(map.srcjoin != null)
-            joins = ConvertJoin(map.a, map.srcjoin);
+            if (map.srcjoin != null)
+                joins = ConvertJoin(map.a, map.srcjoin);
 
             //Where
             string where = "";
@@ -73,7 +76,7 @@ namespace SMU_Mapper.Classes
             }
 
 
-            string queryBuild = String.Format(query, queryName, map.a, where,map.a,joins);
+            string queryBuild = String.Format(query, queryName, map.a, where, map.a, joins);
 
             MapCode.AppendLine(queryBuild);
 
@@ -88,16 +91,25 @@ namespace SMU_Mapper.Classes
                     MapCode.AppendFormat(" {1}.SetAttributeValue(\"object_type\",\"{2}\");", Extensions.queryName, map.b, map.b);
                 else
                 {
-                    MapCode.AppendFormat(" {1}.Name = _ns + \"{1}\";{1}.SetAttributeValue(\"object_type\",\"{2}\");", Extensions.queryName, map.b, map.b);
-                    MapCode.AppendFormat(" _RecordTypeChange({0}.Attribute(\"puid\").Value,\"{1}\",\"{2}\");", map.b, map.a,map.b);
+                    //MapCode.AppendFormat(" {1}.Name = _ns + \"{1}\";{1}.SetAttributeValue(\"object_type\",\"{2}\");", Extensions.queryName, map.b, map.b);
+                    switch (tcTypeT + tcTypeS)
+                    {
+                        case "itemitem":
+                            MapCode.AppendFormat(" _TCPropagateItem({0},\"{1}\",\"{2}\",\"{3}\",\"{4}\",\"{5}\",\"{6}\",\"{7}\",\"{8}\",\"{9}\",\"{10}\",\"{11}\",\"{12}\");", map.b, mClassS.item, mClassS.itemrevision, mClassS.masterform, mClassS.masterformS, mClassS.masterformRev, mClassS.masterformRevS, mClassT.item,mClassT.itemrevision,mClassT.masterform,mClassT.masterformS,mClassT.masterformRev,mClassT.masterformRevS);
+                            break;
+                        case "itemrevitemrev":
+                            MapCode.AppendFormat(" _TCPropagateItemRevision({0},\"{1}\",\"{2}\",\"{3}\",\"{4}\",\"{5}\",\"{6}\",\"{7}\",\"{8}\",\"{9}\",\"{10}\",\"{11}\",\"{12}\");", map.b, mClassS.item, mClassS.itemrevision, mClassS.masterform, mClassS.masterformS, mClassS.masterformRev, mClassS.masterformRevS, mClassT.item, mClassT.itemrevision, mClassT.masterform, mClassT.masterformS, mClassT.masterformRev, mClassT.masterformRevS);
+                            break;
+                        default:
+                            MapCode.AppendFormat(" {1}.Name = _ns + \"{1}\";{1}.SetAttributeValue(\"object_type\",\"{2}\");", Extensions.queryName, map.b, map.b);
+                            break;
+                    }
+
+                    MapCode.AppendFormat(" _RecordTypeChange({0}.Attribute(\"puid\").Value,\"{1}\",\"{2}\");", map.b, map.a, map.b);
                 }
-                    /*query = "{0} = from {1} in _xml.Elements(_ns + \"{1}\") {2} select {1};";
-                queryBuild = String.Format(query, queryName, map.b, "");
-                MapCode.AppendLine(queryBuild);*/
+
             }
 
-
-            
             //Iteration
             StringBuilder Tasks = new StringBuilder();
 
@@ -109,36 +121,85 @@ namespace SMU_Mapper.Classes
                     {
                         case "MapAttr":
                             {
-                                string q = ConvertMapAttr((MapAttr)task,map.b);
+                                string q = ConvertMapAttr((MapAttr)task, map.b);
                                 Tasks.AppendLine(q);
                                 break;
                             }
                         case "MapAttribute":
                             {
-                                string q = ConvertMapAttribute((MapAttribute)task,map.b);
+                                string q = ConvertMapAttribute((MapAttribute)task, map.b);
                                 Tasks.AppendLine(q);
 
                                 break;
                             }
                         case "MapAttrCheck":
                             {
-                                string q = ConvertMapAttrCheck((MapAttrCheck)task,map.b);
+                                string q = ConvertMapAttrCheck((MapAttrCheck)task, map.b);
                                 Tasks.AppendLine(q);
 
                                 break;
                             }
                     }
                 }
-
-
             }
+
+
 
             MapCode.AppendLine(Tasks.ToString());
             MapCode.AppendLine("}");
             return MapCode;
         }
 
-        private static string ConvertMapAttrCheck(MapAttrCheck mCheck,string alias)
+        public static StringBuilder Convert(this Script map, int i)
+        {
+            StringBuilder MapCode = new StringBuilder();
+
+            MapCode.AppendFormat(@"try
+             {{
+                 {0}
+             }}
+             catch(System.Exception ex)
+             {{
+                 throw new System.Exception(""Error in Script :"" + {1} + ""\nError: "" + ex.Message);}}", map.data, i.ToString());
+
+            return MapCode;
+        }
+
+        public static ModelClass getTcModel(this HeaderModel model, string obj)
+        {
+            ModelClass m;
+
+            foreach (var c in model.classes)
+            {
+                if (c.item == obj || c.itemrevision == obj)
+                    return c;
+ 
+            }
+
+            return null;
+        }
+
+        public static string getTcType(this HeaderModel model, string obj)
+        {
+            foreach (var c in model.classes)
+            {
+                if (c.item == obj)
+                    return "item";
+                else if (c.itemrevision == obj)
+                    return "itemrev";
+            }
+
+            return "";
+        }
+
+        public static string[] getRecordedMaps(Maps m)
+        {
+            var maps = m.Items.Where(x => x.GetType() == typeof(Map)).Cast<Map>().Where(x => x.srccheck != null).Select(x => x.b).ToArray();
+
+            return maps;
+        }
+
+        private static string ConvertMapAttrCheck(MapAttrCheck mCheck, string alias)
         {
             string value = mCheck.@if;
             value = ConvertIf(alias, mCheck);
@@ -156,13 +217,13 @@ namespace SMU_Mapper.Classes
                 {
                     case "AttrCheckAttr":
                         {
-                            string q = ConvertMapAttr((AttrCheckAttr)task,alias);
+                            string q = ConvertMapAttr((AttrCheckAttr)task, alias);
                             Tasks.AppendLine(q);
                             break;
                         }
                     case "AttrCheckAttribute":
                         {
-                            string q = ConvertMapAttribute((AttrCheckAttribute)task,alias);
+                            string q = ConvertMapAttribute((AttrCheckAttribute)task, alias);
                             Tasks.AppendLine(q);
 
                             break;
@@ -176,11 +237,11 @@ namespace SMU_Mapper.Classes
             return Tasks.ToString();
         }
 
-        private static string ConvertMapAttribute(MapAttribute mAttribute,string alias)
+        private static string ConvertMapAttribute(MapAttribute mAttribute, string alias)
         {
             string value = mAttribute.value;
 
-            
+
 
             value = _ConvertAttributeString(alias, value);
             value = _ConvertVariableString("", value);
@@ -189,8 +250,8 @@ namespace SMU_Mapper.Classes
             if (refTable.ContainsKey(mAttribute.name) || mAttribute.name == "release_status_list")
             {
 
-                if(mAttribute.name == "release_status_list")
-                    value = String.Format(@"_SetRelSts({0}.Attribute(""{1}""),{2})",alias, mAttribute.name,value);
+                if (mAttribute.name == "release_status_list")
+                    value = String.Format(@"_SetRelSts({0}.Attribute(""{1}""),{2})", alias, mAttribute.name, value);
                 else
                     value = String.Format(@"_GetRef(""{0}"",{1})", mAttribute.name, value);
 
@@ -203,7 +264,7 @@ namespace SMU_Mapper.Classes
             return queryBuild;
         }
 
-        private static string ConvertMapAttribute(AttrCheckAttribute mAttribute,string alias)
+        private static string ConvertMapAttribute(AttrCheckAttribute mAttribute, string alias)
         {
             string value = mAttribute.value;
 
@@ -228,7 +289,7 @@ namespace SMU_Mapper.Classes
             return queryBuild;
         }
 
-        private static string ConvertMapAttr(MapAttr mAttr,string alias)
+        private static string ConvertMapAttr(MapAttr mAttr, string alias)
         {
 
             if (mAttr.copy == null)
@@ -251,7 +312,7 @@ namespace SMU_Mapper.Classes
 
         }
 
-        private static string ConvertMapAttr(AttrCheckAttr mAttr,string alias)
+        private static string ConvertMapAttr(AttrCheckAttr mAttr, string alias)
         {
             if (mAttr.copy == null)
             {
@@ -288,7 +349,7 @@ namespace SMU_Mapper.Classes
         {
             StringBuilder sb = new StringBuilder();
 
-            foreach(SrcJoin srcjoin in mval)
+            foreach (SrcJoin srcjoin in mval)
             {
 
                 string obj = srcjoin.obj;
@@ -301,13 +362,13 @@ namespace SMU_Mapper.Classes
 
                 var groups = Regex.Match(on, @"^([a-zA-z0-9_]+)@([a-zA-z0-9_]+)(?:\s)*?=(?:\s)*?([a-zA-z0-9_]+)@([a-zA-z0-9_]+)$").Groups;
 
-                string leftObj   = groups[1].Value;
-                string leftAttr  = groups[2].Value;
-                string rightObj  = groups[3].Value;
+                string leftObj = groups[1].Value;
+                string leftAttr = groups[2].Value;
+                string rightObj = groups[3].Value;
                 string rightAttr = groups[4].Value;
 
                 join = string.Format("join {0} in {1}.Elements(_ns + \"{0}\") on {2}.Attribute(\"{3}\").Value equals {4}.Attribute(\"{5}\").Value",
-                    rightObj,xmlFile, leftObj,leftAttr,rightObj,rightAttr);
+                    rightObj, xmlFile, leftObj, leftAttr, rightObj, rightAttr);
 
                 sb.AppendLine(join);
             }
@@ -348,7 +409,7 @@ namespace SMU_Mapper.Classes
             {
                 string result = val;
 
-                string patternRefJoin = String.Format(@"([a-zA-z0-9_]+)@({0})",string.Join("|",refTable.Keys.ToArray()));
+                string patternRefJoin = String.Format(@"([a-zA-z0-9_]+)@({0})", string.Join("|", refTable.Keys.ToArray()));
                 string patternRef = String.Format(@"@({0})", string.Join("|", refTable.Keys.ToArray()));
 
                 //check Release Status first
@@ -357,7 +418,7 @@ namespace SMU_Mapper.Classes
 
                 string patternJoins = @"([a-zA-z0-9_]+)@([a-zA-z0-9_]+)";
                 result = _RefReplace(result, patternRefJoin);
-                result = Regex.Replace(result, patternJoins,  "$1.Attribute(\"" + "$2" + "\").Value");
+                result = Regex.Replace(result, patternJoins, "$1.Attribute(\"" + "$2" + "\").Value");
 
                 string pattern = @"@([\w]*)";
                 result = _RefReplace(result, patternRef);
@@ -371,7 +432,7 @@ namespace SMU_Mapper.Classes
                 return val;
         }
 
-        private static string _RefReplace(string input,string pattern)
+        private static string _RefReplace(string input, string pattern)
         {
             string gRef = "";
 
@@ -445,7 +506,7 @@ namespace SMU_Mapper.Classes
                 right = right.Replace("'", "\"");
 
                 //existance check
-                if(right.ToUpper() == "NULL")
+                if (right.ToUpper() == "NULL")
                 {
                     left = left.Replace(".Value", "");
                 }
@@ -462,7 +523,9 @@ namespace SMU_Mapper.Classes
     }
 
 
-
+    /// <summary>
+    /// Convert the mapping code into C# code for compilation
+    /// </summary>
     class MapConverter
     {
 
@@ -470,13 +533,29 @@ namespace SMU_Mapper.Classes
         private string FunctionCode;
         private string LookupCode;
         private string VariableCode;
+        private string[] MapChanges;
+        private HeaderModel model;
 
         public void ConvertMaps(Maps maps)
         {
+            model = maps.header.model;
+            Extensions.model = model;
+            MapChanges = Extensions.getRecordedMaps(maps);
             FunctionCode = ConvertFunctions(maps.header);
             LookupCode = ConvertLookups(maps);
             VariableCode = ConvertVariables(maps.header);
 
+
+            //Target Mappings that don't match the model list
+            List<string> l = new List<string>();
+
+            foreach (var m in maps.Items.Where(x => x.GetType() == typeof(Map)).Cast<Map>())
+            {
+                if (model.getTcType(m.b) == "")
+                    l.Add(m.b);
+            }
+            if (l.Count() > 0) { Console.WriteLine("--Target Mappings that don't match model--"); l.ToList().ForEach(Console.WriteLine); }
+            //End
 
             int i = 1;
             foreach (object m in maps.Items)
@@ -496,10 +575,7 @@ namespace SMU_Mapper.Classes
                     MapCode.Append(";");
                     i++;
                 }
-
             }
-
-
         }
 
         private string ConvertLookups(Maps mMap)
@@ -520,7 +596,7 @@ namespace SMU_Mapper.Classes
                 return "";
 
             var arVar = String.Join(Environment.NewLine, h.function.Select(x => x.data));
-          
+
 
             return arVar;
 
@@ -536,7 +612,7 @@ namespace SMU_Mapper.Classes
             string list = string.Join(",", arVar);
 
             return list;
-            
+
         }
 
         private string ConvertRefTable()
@@ -564,12 +640,13 @@ namespace SMU_Mapper.Classes
         public CompilerResults Compile(string outFile)
         {
             string CreateAccesDatabase = Properties.Resources.CreateAccesDatabase;
-            string functions; 
+            string ClassCode = Properties.Resources.Classes;
+            //string functions; 
 
             var csc = new CSharpCodeProvider(new Dictionary<string, string>() { { "CompilerVersion", "v4.0" }, { "Platform", "x64" } });
-            var parameters = new CompilerParameters(new[] { "System.dll", "mscorlib.dll", "System.Core.dll", "System.Xml.dll", "System.Xml.Linq.dll","System.Data.dll"}, outFile, false);
+            var parameters = new CompilerParameters(new[] { "System.dll", "mscorlib.dll", "System.Core.dll", "System.Xml.dll", "System.Xml.Linq.dll", "System.Data.dll" }, outFile, false);
             parameters.ReferencedAssemblies.Add(@"System.Data.SqlServerCe.dll");
-            
+
 
             parameters.GenerateExecutable = true;
             parameters.IncludeDebugInformation = true;
@@ -586,7 +663,10 @@ namespace SMU_Mapper.Classes
             using System.Collections;
             using System.Collections.Generic;
             using System.Data.SqlServerCe;
+           
             
+            {7}
+
             class Program 
             {{
                                 
@@ -595,193 +675,45 @@ namespace SMU_Mapper.Classes
                 private static XNamespace _ns = null;
 
                 public static Dictionary<string, Dictionary<string, string>> _lookups = LoadAllLookups({3});
-
                 public static Dictionary<string,string> _variables = new Dictionary<string,string>{{{5}}};
-
                 public static Dictionary<string,string[]> _TypeChangeLog = new Dictionary<string,string[]>();
+
+                public static string _IMAN_master_form = null;
 
                 {6}
 
                 public static void Main(string[] args) 
                 {{
                     
-                    bool db_result = CreateNewAccessDatabase();
+                    //bool db_result = CreateNewAccessDatabase();
                     
                     {0} = XElement.Load(args[0]);
                     _ns = {0}.GetDefaultNamespace();
                     IEnumerable<XElement> {1} =  Enumerable.Empty<XElement>();
                     IEnumerable<XElement> {4} =  Enumerable.Empty<XElement>();
 
+                    string _IMAN_master_form = _GetRef(""relation_type"", ""IMAN_master_form"");
+
+                    Classes._xml = _xml;
+                    Classes._ns = _ns;
+                    Classes._IMAN_master_form = _IMAN_master_form;
+
                    {2}
 
                     {0}.Save(args[1]);
                     
-                }}", Extensions.xmlFile, Extensions.queryName, MapCode, LookupCode, Extensions.AttrChkQueryName,VariableCode, refTbl.ToString());
-            
-
-            Code.Append(@" 
-                private static Dictionary<string, string> LoadLookup(string path)
-                {
-                        Dictionary<string, string> LoadLookup_d = new Dictionary<string, string>();
-                        try
-                        {
-                            LoadLookup_d = System.IO.File.ReadAllLines(path).Select(x => x.Split('|')).ToDictionary(x => x[0], x => x[1]);
-      
-                            if(LoadLookup_d.Count() == 0)
-                            System.Console.WriteLine(""Warning - "" + System.IO.Path.GetFileName(path) + "" is empty"");
-                        }
-                        catch(System.IO.FileNotFoundException nf)
-                        {
-                            System.Console.WriteLine(""Error - loading lookups, couldn't find the lookup file.\nCheck that your path is correct:\n"" + nf.FileName);
-                            System.Environment.Exit(1);
-                        }
-                        catch (System.IndexOutOfRangeException)
-                        {
-                            System.Console.WriteLine(""Error - loading lookup in "" + System.IO.Path.GetFileName(path) +  ""\n...most likely key/value pair is malformed"");
-                            System.Environment.Exit(1);
-                        }
-
-                        return LoadLookup_d;
-                }
-
-                private static Dictionary<string, Dictionary<string, string>> LoadAllLookups(params string[][] lookups)
-                {
-                    Dictionary<string, Dictionary<string, string>> d = new Dictionary<string, Dictionary<string, string>>();
-
-                    foreach (string[] lookup in lookups)
-                    {
-                        d.Add(lookup[0], LoadLookup(lookup[1]));
-                    }
-
-                    return d;
-                }
-
-                private static string Lookup(string name, string key)
-                {
-
-                    Dictionary<string,string> d1;
-                    string value = null;
-
-                    if (_lookups.TryGetValue(name, out d1)) 
-                    {
-                        d1.TryGetValue(key, out value);
-                    }
-
-                    return value ?? key;
-
-                }
-
-             private static string VarLookup(string name)
-             {
-                    string value = null;
-
-                    if (!_variables.TryGetValue(name, out value))
-                    {
-                        //variable not found
-                    }
-                    return value;
-
-            }
-
-         private static string _GetRefVal(string attribute,string elemid)
-         {
-            string value = """";
-
-            if (elemid == """") return """";
-
-            elemid = elemid.Replace(""#"", """");
-
-            string RefType = refTable[attribute][0];
-            string RefAttr = refTable[attribute][1];
-
-            value = (from el in _xml.Elements(_ns + RefType)
-                       where el.Attribute(""elemId"").Value == elemid
-                       select el.Attribute(RefAttr).Value).Single();
+                }}", Extensions.xmlFile, Extensions.queryName, MapCode, LookupCode, Extensions.AttrChkQueryName, VariableCode, refTbl.ToString(), ClassCode);
 
 
+            string CompileCode = Properties.Resources.CompileCode;
+            Code.Append(CompileCode);
 
-                return value;
-        }
 
+            Code.AppendLine(FunctionCode);
 
-    private static string _GetRelSts(XAttribute attribute)
-    {
-        try{ 
-        if (attribute == null || attribute.Value == """") return """";
+            Code.AppendLine(CreateAccesDatabase);
 
-        var els = _xml.Elements(_ns + ""ReleaseStatus"").Where(x => x.Attribute(""puid"").Value == attribute.Value).Select(x => x.Attribute(""name"").Value).ToArray();
-        string statuses = string.Join("","", els);
-
-            return statuses;
-        }
-        catch { return """";}
-     }
-
-    private static string _SetRelSts(XAttribute attribute, string Val)
-    {
-        string newPUID = """";
-
-        if (attribute == null || attribute.Value == """")
-        { }
-        else
-        {
-        
-            if(Val == """")
-            {
-                return """";
-            }
-         
-
-            newPUID = attribute.Value;
-
-            var els = _xml.Elements(_ns + ""ReleaseStatus"").Where(x => x.Attribute(""puid"").Value == attribute.Value);
-
-            foreach (var el in els)
-            {
-
-                if (Val == null)
-                {
-                    newPUID = """";
-                    el.Remove();
-                }
-                else
-                el.SetAttributeValue(""name"", Val);
-            }
-        }
-
-        return newPUID;
-
-    }
-
-    private static string _GetRef(string attribute, string refVal){
-            string elemId = """";
-
-                if(refTable.ContainsKey(attribute))
-                {
-                    var dval = refTable[attribute];
-                    var el = " + Extensions.xmlFile + @".Elements(_ns + dval[0]).Where(x => x.Attribute(dval[1]).Value == refVal).Select(x => x.Attribute(""elemId"").Value);
-
-                    if (el.Count() == 1)
-                        elemId = el.Single();
-                    else
-                        return """";
-                }
-
-             return (""#"" + elemId);
-            }
-
-    private static void _RecordTypeChange(string puid, string from, string to)
-    {
-            _TypeChangeLog[puid] = new string[2]{from,to};
-    }
-
-");
-
-Code.AppendLine(FunctionCode);
-
-Code.AppendLine(CreateAccesDatabase);
-
-Code.Append("}");
+            Code.Append("}");
 
             CompilerResults results = csc.CompileAssemblyFromSource(parameters,
             Code.ToString());
@@ -796,6 +728,6 @@ Code.Append("}");
             return results;
         }
 
-        
+
     }
 }

@@ -70,9 +70,56 @@ namespace SMU_Mapper.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to class Classes {
+        ///
+        ///    public static XElement _xml;
+        ///    public static XNamespace _ns;
+        ///    public static string _IMAN_master_form;
+        ///
+        ///    public class ItemClass
+        ///    {
+        ///        public XElement item;
+        ///        public XElement masterForm;
+        ///        public XElement masterFormS;
+        ///
+        ///      
+        ///
+        ///        public ItemClass(XElement xitem)
+        ///        {
+        ///            item = xitem;
+        ///            //var forms = _get
+        ///        }
+        ///
+        ///        private XElement[] _getItemMasterForm(XElement item)
+        ///        {
+        ///            var MasterForm [rest of string was truncated]&quot;;.
+        /// </summary>
+        internal static string Classes {
+            get {
+                return ResourceManager.GetString("Classes", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to private static Dictionary&lt;string, string&gt; LoadLookup(string path)
+        ///                {
+        ///                        Dictionary&lt;string, string&gt; LoadLookup_d = new Dictionary&lt;string, string&gt;();
+        ///                        try
+        ///                        {
+        ///                            LoadLookup_d = System.IO.File.ReadAllLines(path).Select(x =&gt; x.Split(&apos;|&apos;)).ToDictionary(x =&gt; x[0], x =&gt; x[1]);
+        ///      
+        ///                            if(LoadLookup_d.Count() == 0)
+        ///                            System.Console.WriteLine(&quot;Warning  [rest of string was truncated]&quot;;.
+        /// </summary>
+        internal static string CompileCode {
+            get {
+                return ResourceManager.GetString("CompileCode", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to public static bool CreateNewAccessDatabase()
         ///    {
-        ///		return true;;
         ///
         ///		System.Console.WriteLine(&quot;CreateNewAccessDatabase()&quot;);
         ///        bool result = false;
@@ -83,13 +130,14 @@ namespace SMU_Mapper.Properties {
         ///
         ///        SqlCeConnection conn = null;
         ///
+        ///		result = true;
         ///
         ///        try
         ///        {
         ///            conn = new SqlCeConnection(connectionString);
         ///            conn.Open();
         ///
-        ///            SqlCe [rest of string was truncated]&quot;;.
+        ///			//CREATE TABL [rest of string was truncated]&quot;;.
         /// </summary>
         internal static string CreateAccesDatabase {
             get {

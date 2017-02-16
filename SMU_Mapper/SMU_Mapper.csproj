@@ -11,7 +11,8 @@
     <AssemblyName>SMU_Mapper</AssemblyName>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
-    <TargetFrameworkProfile />
+    <TargetFrameworkProfile>
+    </TargetFrameworkProfile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>x64</PlatformTarget>
@@ -42,6 +43,7 @@
     <PlatformTarget>x86</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
     <OutputPath>bin\x86\Release\</OutputPath>
@@ -51,6 +53,7 @@
     <PlatformTarget>x86</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -67,7 +70,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Classes\MapConverter.cs" />
-    <None Include="Classes\MML_Schema.cs" />
     <Compile Include="CreateModel.cs" />
     <Compile Include="MMLReader.cs" />
     <Compile Include="Program.cs" />
@@ -94,6 +96,8 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AddChange.txt" />
+    <None Include="Resources\CompileCode.txt" />
+    <None Include="Resources\Classes.txt" />
     <Content Include="Resources\CreateAccesDatabase.txt" />
   </ItemGroup>
   <ItemGroup />
