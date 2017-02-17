@@ -232,3 +232,56 @@ private static Dictionary<string, string> LoadLookup(string path)
             }
         }
     }
+
+	private static void _FastTCPropagateItem(string sItem, string sRev, string sMasterForm, string sMasterFormS, string sMasterRevForm, string sMasterRevFormS, string tItem, string tRevision, string tMasterForm, string tMasterFormS, string tMasterRevForm, string tMasterRevFormS)
+    {
+        var items = _xml.Elements(_ns + sItem);
+        foreach(var tc in items)
+        {
+            _RecordTypeChange(tc.Attribute("puid").Value, sItem, tItem);
+            tc.SetAttributeValue("object_type", tItem);
+            tc.Name = _ns + tItem;
+        }
+
+        var masterforms = from mf in _xml.Elements(_ns + "Form")
+                          where mf.Attribute("object_type").Value == sMasterForm
+                          select mf;
+        foreach (var tc in masterforms)
+        {
+            _RecordTypeChange(tc.Attribute("puid").Value, sMasterForm, tMasterForm);
+            tc.SetAttributeValue("object_type", tMasterForm);
+        }
+
+        var masterformsS = _xml.Elements(_ns + sMasterFormS);
+        foreach (var tc in masterformsS)
+        {
+            _RecordTypeChange(tc.Attribute("puid").Value, sMasterFormS, tMasterFormS);
+            tc.SetAttributeValue("object_type", tMasterFormS);
+            tc.Name = _ns + tMasterFormS;
+        }
+
+        var revisions = _xml.Elements(_ns + sRev);
+        foreach (var tc in revisions)
+        {
+            _RecordTypeChange(tc.Attribute("puid").Value, sRev, tRevision);
+            tc.SetAttributeValue("object_type", tRevision);
+            tc.Name = _ns + tRevision;
+        }
+
+        var masterrevforms = from mf in _xml.Elements(_ns + "Form")
+                          where mf.Attribute("object_type").Value == sMasterRevForm
+                          select mf;
+        foreach (var tc in masterrevforms)
+        {
+            _RecordTypeChange(tc.Attribute("puid").Value, sMasterRevForm, tMasterRevForm);
+            tc.SetAttributeValue("object_type", tMasterRevForm);
+        }
+
+        var masterrevformsS = _xml.Elements(_ns + sMasterRevFormS);
+        foreach (var tc in masterrevformsS)
+        {
+            _RecordTypeChange(tc.Attribute("puid").Value, sMasterRevFormS, tMasterRevFormS);
+            tc.SetAttributeValue("object_type", tMasterRevFormS);
+            tc.Name = _ns + tMasterRevFormS;
+        }
+    }

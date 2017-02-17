@@ -368,7 +368,7 @@ public partial class Map
 
     public Map()
     {
-        this.mapclassField = "no";
+        this.mapclassField = "yes";
     }
 
     /// <remarks/>
@@ -445,7 +445,7 @@ public partial class Map
 
     /// <remarks/>
     [System.Xml.Serialization.XmlAttributeAttribute("map-class")]
-    [System.ComponentModel.DefaultValueAttribute("no")]
+    [System.ComponentModel.DefaultValueAttribute("yes")]
     public string mapclass
     {
         get

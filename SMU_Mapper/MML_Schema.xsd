@@ -28,7 +28,7 @@
                               <xs:simpleType>
                                 <xs:restriction base="xs:string">
                                   <xs:minLength value="1"/>
-                                  <xs:pattern value="([a-zA-Z0-9_]+)\|([a-zA-Z0-9_]+)"/>
+                                  <xs:pattern value="([a-zA-Z0-9_\s]+)\|([a-zA-Z0-9_\s]+)"/>
                                 </xs:restriction>
                               </xs:simpleType>
                             </xs:attribute>
@@ -44,7 +44,7 @@
                               <xs:simpleType>
                                 <xs:restriction base="xs:string">
                                   <xs:minLength value="1"/>
-                                  <xs:pattern value="([a-zA-Z0-9_]+)\|([a-zA-Z0-9_]+)"/>
+                                  <xs:pattern value="([a-zA-Z0-9_\s]+)\|([a-zA-Z0-9_\s]+)"/>
                                 </xs:restriction>
                               </xs:simpleType>
                             </xs:attribute>
@@ -277,6 +277,14 @@
                   <xs:restriction base="xs:string">
                     <xs:minLength value="1"/>
                     <xs:pattern value="[a-zA-Z0-9_]+"/>
+                  </xs:restriction>
+                </xs:simpleType>
+              </xs:attribute>
+              <xs:attribute name="map-class" use="optional" >
+                <xs:simpleType>
+                  <xs:restriction base="xs:string">
+                    <xs:enumeration value="yes"/>
+                    <xs:enumeration value="no"/>
                   </xs:restriction>
                 </xs:simpleType>
               </xs:attribute>

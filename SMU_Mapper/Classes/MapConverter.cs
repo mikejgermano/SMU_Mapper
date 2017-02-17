@@ -50,13 +50,15 @@ namespace SMU_Mapper.Classes
 
             string tcTypeT = model.getTcType(map.b);
             ModelClass mClassT = null;
-           
-            if(tcTypeT != "")
+
+            if (tcTypeT != "")
             {
                 mClassT = model.getTcModel(map.b);
             }
 
-            string query = "";
+            if ((map.mapclass == "yes" && map.srccheck != null) || (mClassS == null || mClassT == null || map.mapclass == "no"))
+            {
+                string query = "";
             //Query
             query = "{0} = from {3} in _xml.Elements(_ns + \"{1}\") {4} {2} select {3};";
             //Joins
@@ -75,78 +77,88 @@ namespace SMU_Mapper.Classes
 
             }
 
+            
+                string queryBuild = String.Format(query, queryName, map.a, where, map.a, joins);
 
-            string queryBuild = String.Format(query, queryName, map.a, where, map.a, joins);
+                MapCode.AppendLine(queryBuild);
 
-            MapCode.AppendLine(queryBuild);
+                //Start the itteration
+                MapCode.AppendFormat("foreach(var {0} in {1}){{", map.b, Extensions.queryName);
 
-            //Start the itteration
-            MapCode.AppendFormat("foreach(var {0} in {1}){{", map.b, Extensions.queryName);
+                //Map-Class Name change
 
-            //Map-Class Name change
-
-            if (map.a != map.b)
-            {
-                if (_DontChangeName.Contains(map.a))
-                    MapCode.AppendFormat(" {1}.SetAttributeValue(\"object_type\",\"{2}\");", Extensions.queryName, map.b, map.b);
-                else
+                if (map.a != map.b && map.srccheck != null)
                 {
-                    //MapCode.AppendFormat(" {1}.Name = _ns + \"{1}\";{1}.SetAttributeValue(\"object_type\",\"{2}\");", Extensions.queryName, map.b, map.b);
-                    switch (tcTypeT + tcTypeS)
+                    if (_DontChangeName.Contains(map.a))
+                        MapCode.AppendFormat(" {1}.SetAttributeValue(\"object_type\",\"{2}\");", Extensions.queryName, map.b, map.b);
+                    else
                     {
-                        case "itemitem":
-                            MapCode.AppendFormat(" _TCPropagateItem({0},\"{1}\",\"{2}\",\"{3}\",\"{4}\",\"{5}\",\"{6}\",\"{7}\",\"{8}\",\"{9}\",\"{10}\",\"{11}\",\"{12}\");", map.b, mClassS.item, mClassS.itemrevision, mClassS.masterform, mClassS.masterformS, mClassS.masterformRev, mClassS.masterformRevS, mClassT.item,mClassT.itemrevision,mClassT.masterform,mClassT.masterformS,mClassT.masterformRev,mClassT.masterformRevS);
-                            break;
-                        case "itemrevitemrev":
-                            MapCode.AppendFormat(" _TCPropagateItemRevision({0},\"{1}\",\"{2}\",\"{3}\",\"{4}\",\"{5}\",\"{6}\",\"{7}\",\"{8}\",\"{9}\",\"{10}\",\"{11}\",\"{12}\");", map.b, mClassS.item, mClassS.itemrevision, mClassS.masterform, mClassS.masterformS, mClassS.masterformRev, mClassS.masterformRevS, mClassT.item, mClassT.itemrevision, mClassT.masterform, mClassT.masterformS, mClassT.masterformRev, mClassT.masterformRevS);
-                            break;
-                        default:
-                            MapCode.AppendFormat(" {1}.Name = _ns + \"{1}\";{1}.SetAttributeValue(\"object_type\",\"{2}\");", Extensions.queryName, map.b, map.b);
-                            break;
-                    }
-
-                    MapCode.AppendFormat(" _RecordTypeChange({0}.Attribute(\"puid\").Value,\"{1}\",\"{2}\");", map.b, map.a, map.b);
-                }
-
-            }
-
-            //Iteration
-            StringBuilder Tasks = new StringBuilder();
-
-            if (map.Items != null)
-            {
-                foreach (var task in map.Items)
-                {
-                    switch (task.GetType().Name)
-                    {
-                        case "MapAttr":
-                            {
-                                string q = ConvertMapAttr((MapAttr)task, map.b);
-                                Tasks.AppendLine(q);
+                        //MapCode.AppendFormat(" {1}.Name = _ns + \"{1}\";{1}.SetAttributeValue(\"object_type\",\"{2}\");", Extensions.queryName, map.b, map.b);
+                        switch (tcTypeT + tcTypeS + "|" + map.mapclass)
+                        {
+                            case "itemitem|yes":
+                                MapCode.AppendFormat(" _TCPropagateItem({0},\"{1}\",\"{2}\",\"{3}\",\"{4}\",\"{5}\",\"{6}\",\"{7}\",\"{8}\",\"{9}\",\"{10}\",\"{11}\",\"{12}\");", map.b, mClassS.item, mClassS.itemrevision, mClassS.masterform, mClassS.masterformS, mClassS.masterformRev, mClassS.masterformRevS, mClassT.item, mClassT.itemrevision, mClassT.masterform, mClassT.masterformS, mClassT.masterformRev, mClassT.masterformRevS);
                                 break;
-                            }
-                        case "MapAttribute":
-                            {
-                                string q = ConvertMapAttribute((MapAttribute)task, map.b);
-                                Tasks.AppendLine(q);
-
+                            case "itemrevitemrev|yes":
+                                MapCode.AppendFormat(" _TCPropagateItemRevision({0},\"{1}\",\"{2}\",\"{3}\",\"{4}\",\"{5}\",\"{6}\",\"{7}\",\"{8}\",\"{9}\",\"{10}\",\"{11}\",\"{12}\");", map.b, mClassS.item, mClassS.itemrevision, mClassS.masterform, mClassS.masterformS, mClassS.masterformRev, mClassS.masterformRevS, mClassT.item, mClassT.itemrevision, mClassT.masterform, mClassT.masterformS, mClassT.masterformRev, mClassT.masterformRevS);
                                 break;
-                            }
-                        case "MapAttrCheck":
-                            {
-                                string q = ConvertMapAttrCheck((MapAttrCheck)task, map.b);
-                                Tasks.AppendLine(q);
-
+                            default:
+                                MapCode.AppendFormat(" {1}.Name = _ns + \"{1}\";{1}.SetAttributeValue(\"object_type\",\"{2}\");", Extensions.queryName, map.b, map.b);
                                 break;
-                            }
+                        }
+
+                        MapCode.AppendFormat(" _RecordTypeChange({0}.Attribute(\"puid\").Value,\"{1}\",\"{2}\");", map.b, map.a, map.b);
                     }
                 }
+
+                //Iteration
+                StringBuilder Tasks = new StringBuilder();
+
+                if (map.Items != null)
+                {
+                    foreach (var task in map.Items)
+                    {
+                        switch (task.GetType().Name)
+                        {
+                            case "MapAttr":
+                                {
+                                    string q = ConvertMapAttr((MapAttr)task, map.b);
+                                    Tasks.AppendLine(q);
+                                    break;
+                                }
+                            case "MapAttribute":
+                                {
+                                    string q = ConvertMapAttribute((MapAttribute)task, map.b);
+                                    Tasks.AppendLine(q);
+
+                                    break;
+                                }
+                            case "MapAttrCheck":
+                                {
+                                    string q = ConvertMapAttrCheck((MapAttrCheck)task, map.b);
+                                    Tasks.AppendLine(q);
+
+                                    break;
+                                }
+                        }
+                    }
+                }
+
+
+
+                MapCode.AppendLine(Tasks.ToString());
+                MapCode.AppendLine("}");
             }
 
+            //Fast Propagate
+            if (map.a != map.b && map.srccheck == null && map.mapclass=="yes")
+            {
+                if (mClassS != null && mClassT != null)
+                {
+                    MapCode.AppendFormat(" _FastTCPropagateItem(\"{0}\",\"{1}\",\"{2}\",\"{3}\",\"{4}\",\"{5}\",\"{6}\",\"{7}\",\"{8}\",\"{9}\",\"{10}\",\"{11}\");", mClassS.item, mClassS.itemrevision, mClassS.masterform, mClassS.masterformS, mClassS.masterformRev, mClassS.masterformRevS, mClassT.item, mClassT.itemrevision, mClassT.masterform, mClassT.masterformS, mClassT.masterformRev, mClassT.masterformRevS);
+                }
+            }
 
-
-            MapCode.AppendLine(Tasks.ToString());
-            MapCode.AppendLine("}");
             return MapCode;
         }
 
@@ -173,7 +185,7 @@ namespace SMU_Mapper.Classes
             {
                 if (c.item == obj || c.itemrevision == obj)
                     return c;
- 
+
             }
 
             return null;
