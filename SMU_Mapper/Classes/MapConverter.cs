@@ -87,7 +87,7 @@ namespace SMU_Mapper.Classes
 
                 //Map-Class Name change
 
-                if (map.a != map.b && map.srccheck != null)
+                if (map.a != map.b )
                 {
                     if (_DontChangeName.Contains(map.a))
                         MapCode.AppendFormat(" {1}.SetAttributeValue(\"object_type\",\"{2}\");", Extensions.queryName, map.b, map.b);
