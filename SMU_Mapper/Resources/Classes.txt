@@ -96,7 +96,9 @@ static class Classes
 
         private static ItemClass _getItem(XElement rev, string sitem, string srev, string sMasterFormS, string smasterRevFormS)
         {
-            ItemClass qItem = (from item in _xml.Elements(_ns + sitem)
+            var islandElements = Islands[rev.Attribute("island_id").Value];
+
+            ItemClass qItem = (from item in islandElements.Where(x=>x.Name.LocalName == sitem)
                                where item.Attribute("puid").Value == rev.Attribute("items_tag").Value
                                select new ItemClass(item, srev, sMasterFormS, smasterRevFormS)).Single();
 
@@ -134,7 +136,7 @@ static class Classes
         var formList = ItemMasterList.Union(ItemRevList);
 
         var islandData = from el in _xml.Elements()
-                         where masterList.Contains(el.Name.LocalName) || (el.Attribute("object_type") != null && formList.Contains(el.Attribute("object_type").Value))
+                         where masterList.Contains(el.Name.LocalName) || (el.Name.LocalName != "POM_stub" && el.Attribute("object_type") != null && formList.Contains(el.Attribute("object_type").Value))
                          group el by el.Attribute("island_id").Value into g
                          orderby g.Key
                          select g;
