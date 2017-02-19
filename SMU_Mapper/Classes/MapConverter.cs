@@ -56,28 +56,28 @@ namespace SMU_Mapper.Classes
                 mClassT = model.getTcModel(map.b);
             }
 
-            if ((map.mapclass == "yes" && map.srccheck != null) || (mClassS == null || mClassT == null || map.mapclass == "no"))
-            {
+            //if ((map.mapclass == "yes" && map.srccheck != null) || (mClassS == null || mClassT == null || map.mapclass == "no"))
+            //{
                 string query = "";
-            //Query
-            query = "{0} = from {3} in _xml.Elements(_ns + \"{1}\") {4} {2} select {3};";
-            //Joins
-            string joins = "";
-            if (map.srcjoin != null)
-                joins = ConvertJoin(map.a, map.srcjoin);
+                //Query
+                query = "{0} = from {3} in _xml.Elements(_ns + \"{1}\") {4} {2} select {3};";
+                //Joins
+                string joins = "";
+                if (map.srcjoin != null)
+                    joins = ConvertJoin(map.a, map.srcjoin);
 
-            //Where
-            string where = "";
-            if (map.srccheck != null)
-            {
-                string ifs = map.srccheck.@if;
+                //Where
+                string where = "";
+                if (map.srccheck != null)
+                {
+                    string ifs = map.srccheck.@if;
 
-                //build Where
-                where = ConvertIf(map.a, map.srccheck);
+                    //build Where
+                    where = ConvertIf(map.a, map.srccheck);
 
-            }
+                }
 
-            
+
                 string queryBuild = String.Format(query, queryName, map.a, where, map.a, joins);
 
                 MapCode.AppendLine(queryBuild);
@@ -87,7 +87,7 @@ namespace SMU_Mapper.Classes
 
                 //Map-Class Name change
 
-                if (map.a != map.b )
+                if (map.a != map.b)
                 {
                     if (_DontChangeName.Contains(map.a))
                         MapCode.AppendFormat(" {1}.SetAttributeValue(\"object_type\",\"{2}\");", Extensions.queryName, map.b, map.b);
@@ -148,16 +148,16 @@ namespace SMU_Mapper.Classes
 
                 MapCode.AppendLine(Tasks.ToString());
                 MapCode.AppendLine("}");
-            }
+            //}
 
-            //Fast Propagate
+            /*Fast Propagate
             if (map.a != map.b && map.srccheck == null && map.mapclass=="yes")
             {
                 if (mClassS != null && mClassT != null)
                 {
                     MapCode.AppendFormat(" _FastTCPropagateItem(\"{0}\",\"{1}\",\"{2}\",\"{3}\",\"{4}\",\"{5}\",\"{6}\",\"{7}\",\"{8}\",\"{9}\",\"{10}\",\"{11}\");", mClassS.item, mClassS.itemrevision, mClassS.masterform, mClassS.masterformS, mClassS.masterformRev, mClassS.masterformRevS, mClassT.item, mClassT.itemrevision, mClassT.masterform, mClassT.masterformS, mClassT.masterformRev, mClassT.masterformRevS);
                 }
-            }
+            }*/
 
             return MapCode;
         }
@@ -627,6 +627,33 @@ namespace SMU_Mapper.Classes
 
         }
 
+        private string ConvertModelTable()
+        {
+            var last = model.classes.Last();
+            StringBuilder sb = new StringBuilder("public static string[,] classes = new string[,] {");
+            string format = "{{\"{0}\",\"{1}\",\"{2}\",\"{3}\",\"{4}\",\"{5}\"}}";
+
+            foreach (var m in model.classes)
+            {
+                string s = String.Format(format, m.item, m.itemrevision, m.masterform, m.masterformS, m.masterformRev, m.masterformRevS);
+
+                if (m.Equals(last))
+                {
+                    sb.Append(s);
+                }
+                else
+                {
+                    s += ",";
+
+                    sb.AppendLine(s);
+                }
+            }
+
+            sb.Append("};");
+
+            return sb.ToString();
+        }
+
         private string ConvertRefTable()
         {
             var refTbl = Extensions.refTable.ToList();
@@ -669,6 +696,10 @@ namespace SMU_Mapper.Classes
             //Reference Table info
             string refTbl = ConvertRefTable();
 
+            string modelTbl = ConvertModelTable();
+
+            ClassCode = ClassCode.Insert(23, modelTbl);
+
             Code.AppendFormat(@"
             using System.Linq;
             using System.Xml.Linq;
@@ -700,6 +731,7 @@ namespace SMU_Mapper.Classes
                     //bool db_result = CreateNewAccessDatabase();
                     
                     {0} = XElement.Load(args[0]);
+                    System.Console.WriteLine(""XML loaded."");
                     _ns = {0}.GetDefaultNamespace();
                     IEnumerable<XElement> {1} =  Enumerable.Empty<XElement>();
                     IEnumerable<XElement> {4} =  Enumerable.Empty<XElement>();
@@ -709,6 +741,9 @@ namespace SMU_Mapper.Classes
                     Classes._xml = _xml;
                     Classes._ns = _ns;
                     Classes._IMAN_master_form = _IMAN_master_form;
+
+                    Classes._ReadXML();
+                    System.Console.WriteLine(""Caching Complete."");
 
                    {2}
 
