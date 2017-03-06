@@ -61,38 +61,18 @@ namespace SMU_Mapper.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to .
-        /// </summary>
-        internal static string AddChange {
-            get {
-                return ResourceManager.GetString("AddChange", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to class Classes {
-        ///
-        ///    public static XElement _xml;
+        ///   Looks up a localized string similar to static class Classes
+        ///{
+        ///    public static XElement _xml = null;
         ///    public static XNamespace _ns;
         ///    public static string _IMAN_master_form;
         ///
-        ///    public class ItemClass
+        ///    static private XElement[] _getMasterForm(XElement obj, string StorageClass)
         ///    {
-        ///        public XElement item;
-        ///        public XElement masterForm;
-        ///        public XElement masterFormS;
+        ///        var islandElements = Islands[obj.Attribute(&quot;island_id&quot;).Value];
         ///
-        ///      
-        ///
-        ///        public ItemClass(XElement xitem)
-        ///        {
-        ///            item = xitem;
-        ///            //var forms = _get
-        ///        }
-        ///
-        ///        private XElement[] _getItemMasterForm(XElement item)
-        ///        {
-        ///            var MasterForm [rest of string was truncated]&quot;;.
+        ///        var MasterForm = (from im in islandElements.Where(x =&gt; x.Name.LocalName == &quot;ImanRelation&quot;)
+        ///                          join mForm in islandElements.Where(x =&gt; x.Name.LocalName == &quot;Form&quot;) on im.A [rest of string was truncated]&quot;;.
         /// </summary>
         internal static string Classes {
             get {
@@ -146,6 +126,42 @@ namespace SMU_Mapper.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to public class ErrorList : List&lt;ErrorList.ErrorInfo&gt;
+        ///{
+        ///    public new void Add(ErrorInfo item)
+        ///    {
+        ///        //check if ignored
+        ///
+        ///        base.Add(item);
+        ///    }
+        ///
+        ///    public class ErrorInfo
+        ///    {
+        ///        public enum ErrorCodes : int
+        ///        {
+        ///            ///&lt;summary&gt;Item missing MasterForm&lt;/summary&gt;
+        ///            [Description(&quot;Item missing MasterForm&quot;)]
+        ///            [ErrorType(ErrorType.ErrorTypes.OptionalFatal)]
+        ///            E101 = 101,
+        ///
+        ///            ///&lt;summary&gt;ItemRevision missing MasterForm&lt;/sum [rest of string was truncated]&quot;;.
+        /// </summary>
+        internal static string ErrorInfo {
+            get {
+                return ResourceManager.GetString("ErrorInfo", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to .
+        /// </summary>
+        internal static string Global {
+            get {
+                return ResourceManager.GetString("Global", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to &lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
         ///&lt;xs:schema attributeFormDefault=&quot;unqualified&quot; elementFormDefault=&quot;qualified&quot; xmlns:xs=&quot;http://www.w3.org/2001/XMLSchema&quot; xmlns:mstns=&quot;http://tempuri.org/myschema/unique&quot;&gt;
         ///  &lt;xs:element name=&quot;maps&quot;&gt;
@@ -161,6 +177,27 @@ namespace SMU_Mapper.Properties {
         internal static string MMLSchema {
             get {
                 return ResourceManager.GetString("MMLSchema", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to public static class StringExtension
+        ///{
+        ///    public static string[] Split(this string str, string splitter)
+        ///    {
+        ///        return str.Split(new[] { splitter }, System.StringSplitOptions.None);
+        ///    }
+        ///
+        ///    public static string Trunc(this string value, byte maxLength)
+        ///    {
+        ///        if (string.IsNullOrEmpty(value)) return value;
+        ///        return value.Length &lt;= maxLength ? value : value.Substring(0, maxLength);
+        ///    }
+        ///}.
+        /// </summary>
+        internal static string StringExtensions {
+            get {
+                return ResourceManager.GetString("StringExtensions", resourceCulture);
             }
         }
     }

@@ -95,10 +95,12 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Resources\AddChange.txt" />
-    <None Include="Resources\CompileCode.txt" />
-    <None Include="Resources\Classes.txt" />
-    <Content Include="Resources\CreateAccesDatabase.txt" />
+    <None Include="Resources\Classes.cs" />
+    <None Include="Resources\CompileCode.cs" />
+    <None Include="Resources\CreateAccesDatabase.cs" />
+    <None Include="Resources\ErrorInfo.cs" />
+    <None Include="Resources\Global.cs" />
+    <Compile Include="Resources\StringExtensions.cs" />
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

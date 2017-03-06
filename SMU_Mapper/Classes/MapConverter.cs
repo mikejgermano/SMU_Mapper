@@ -82,18 +82,21 @@ namespace SMU_Mapper.Classes
 
                 MapCode.AppendLine(queryBuild);
 
-                //Start the itteration
-                MapCode.AppendFormat("foreach(var {0} in {1}){{", map.b, Extensions.queryName);
+            //Errorchecking Empty Query
+            MapCode.AppendFormat("if (!_query.Any()) {{ Global._errList.Add(new ErrorList.ErrorInfo(Global._mapCounter, ErrorCodes.MAP_QUERY_EMPTY, \"\", \"\", TCTypes.Mapping, \"{0}\")); }}", map.a);
+
+            //Start the itteration
+            MapCode.AppendFormat("foreach(var {0} in {1}){{", map.b, Extensions.queryName);
 
                 //Map-Class Name change
 
                 if (map.a != map.b)
                 {
                     if (_DontChangeName.Contains(map.a))
-                        MapCode.AppendFormat(" {1}.SetAttributeValue(\"object_type\",\"{2}\");", Extensions.queryName, map.b, map.b);
+                        MapCode.AppendFormat(" {1}.SetAttrValue(\"object_type\",\"{2}\");", Extensions.queryName, map.b, map.b);
                     else
                     {
-                        //MapCode.AppendFormat(" {1}.Name = _ns + \"{1}\";{1}.SetAttributeValue(\"object_type\",\"{2}\");", Extensions.queryName, map.b, map.b);
+                        //MapCode.AppendFormat(" {1}.Name = _ns + \"{1}\";{1}.SetAttrValue(\"object_type\",\"{2}\");", Extensions.queryName, map.b, map.b);
                         switch (tcTypeT + tcTypeS + "|" + map.mapclass)
                         {
                             case "itemitem|yes":
@@ -103,7 +106,7 @@ namespace SMU_Mapper.Classes
                                 MapCode.AppendFormat(" if({13}.Name.LocalName != \"{13}\")_TCPropagateItemRevision({0},\"{1}\",\"{2}\",\"{3}\",\"{4}\",\"{5}\",\"{6}\",\"{7}\",\"{8}\",\"{9}\",\"{10}\",\"{11}\",\"{12}\");", map.b, mClassS.item, mClassS.itemrevision, mClassS.masterform, mClassS.masterformS, mClassS.masterformRev, mClassS.masterformRevS, mClassT.item, mClassT.itemrevision, mClassT.masterform, mClassT.masterformS, mClassT.masterformRev, mClassT.masterformRevS, map.b);
                                 break;
                             default:
-                                MapCode.AppendFormat(" {1}.Name = _ns + \"{1}\";{1}.SetAttributeValue(\"object_type\",\"{2}\");", Extensions.queryName, map.b, map.b);
+                                MapCode.AppendFormat(" {1}.Name = _ns + \"{1}\";{1}.SetAttrValue(\"object_type\",\"{2}\");", Extensions.queryName, map.b, map.b);
                                 break;
                         }
 
@@ -179,8 +182,6 @@ namespace SMU_Mapper.Classes
 
         public static ModelClass getTcModel(this HeaderModel model, string obj)
         {
-            ModelClass m;
-
             foreach (var c in model.classes)
             {
                 if (c.item == obj || c.itemrevision == obj)
@@ -269,7 +270,7 @@ namespace SMU_Mapper.Classes
 
             }
 
-            string sb = "{0}.SetAttributeValue(\"{1}\",{2});";
+            string sb = "{0}.SetAttrValue(\"{1}\",{2});";
 
             string queryBuild = String.Format(sb, alias, mAttribute.name, value.Replace("'", "\""));
 
@@ -294,7 +295,7 @@ namespace SMU_Mapper.Classes
 
             }
 
-            string sb = "{0}.SetAttributeValue(\"{1}\",{2});";
+            string sb = "{0}.SetAttrValue(\"{1}\",{2});";
 
             string queryBuild = String.Format(sb, alias, mAttribute.name, value.Replace("'", "\""));
 
@@ -306,7 +307,7 @@ namespace SMU_Mapper.Classes
 
             if (mAttr.copy == null)
             {
-                string sb = "{0}.SetAttributeValue(\"{1}\",{0}.Attribute(\"{2}\").Value);{0}.Attribute(\"{2}\").Remove();";
+                string sb = "{0}.SetAttrValue(\"{1}\",{0}.Attribute(\"{2}\").Value);{0}.Attribute(\"{2}\").Remove();";
 
                 string queryBuild = String.Format(sb, alias, mAttr.b, mAttr.a);
 
@@ -314,7 +315,7 @@ namespace SMU_Mapper.Classes
             }
             else
             {
-                string sb = "{0}.SetAttributeValue(\"{1}\",{0}.Attribute(\"{2}\").Value);";
+                string sb = "{0}.SetAttrValue(\"{1}\",{0}.Attribute(\"{2}\").Value);";
 
                 string queryBuild = String.Format(sb, alias, mAttr.b, mAttr.a);
 
@@ -328,7 +329,7 @@ namespace SMU_Mapper.Classes
         {
             if (mAttr.copy == null)
             {
-                string sb = "{0}.SetAttributeValue(\"{1}\",{0}.Attribute(\"{2}\").Value);{0}.Attribute(\"{2}\").Remove();";
+                string sb = "{0}.SetAttrValue(\"{1}\",{0}.Attribute(\"{2}\").Value);{0}.Attribute(\"{2}\").Remove();";
 
                 string queryBuild = String.Format(sb, alias, mAttr.b, mAttr.a);
 
@@ -336,7 +337,7 @@ namespace SMU_Mapper.Classes
             }
             else
             {
-                string sb = "{0}.SetAttributeValue(\"{1}\",{0}.Attribute(\"{2}\").Value);";
+                string sb = "{0}.SetAttrValue(\"{1}\",{0}.Attribute(\"{2}\").Value);";
 
                 string queryBuild = String.Format(sb, alias, mAttr.b, mAttr.a);
 
@@ -547,6 +548,8 @@ namespace SMU_Mapper.Classes
         private string VariableCode;
         private string[] MapChanges;
         private HeaderModel model;
+        private int TotalMapCount = 0;
+
 
         public void ConvertMaps(Maps maps)
         {
@@ -558,25 +561,31 @@ namespace SMU_Mapper.Classes
             VariableCode = ConvertVariables(maps.header);
 
 
-            //Target Mappings that don't match the model list
-            List<string> l = new List<string>();
+            //Mappings that don't match the model list
+            var srcMdlMiss = (from m in maps.Items.Where(x => x.GetType() == typeof(Map)).Cast<Map>()
+                             where model.getTcType(m.b) == ""
+                             select m.b).Distinct().ToList();
 
-            foreach (var m in maps.Items.Where(x => x.GetType() == typeof(Map)).Cast<Map>())
-            {
-                if (model.getTcType(m.b) == "")
-                    l.Add(m.b);
-            }
-            if (l.Count() > 0) { Console.WriteLine("--Target Mappings that don't match model--"); l.ToList().ForEach(Console.WriteLine); }
+            if (srcMdlMiss.Count() > 0) { Console.WriteLine("--Source Mappings that don't match model--"); srcMdlMiss.ForEach(Console.WriteLine); }
+
+            var trgtMdlMiss = (from m in maps.Items.Where(x => x.GetType() == typeof(Map)).Cast<Map>()
+                              where model.getTcType(m.a) == ""
+                              select m.a).Distinct().ToList();
+           
+            if (trgtMdlMiss.Count() > 0) { Console.WriteLine("--Target Mappings that don't match model--"); trgtMdlMiss.ForEach(Console.WriteLine); }
             //End
 
+            TotalMapCount = maps.Items.Count();
             int i = 1;
             foreach (object m in maps.Items)
             {
                 if (m.GetType().Name == "Map")
                 {
                     MapCode.AppendLine("\n\n// Map :" + i.ToString());
-
+                    MapCode.AppendLine("Global._mapCounter = " + i.ToString() + ";");
                     MapCode.AppendLine(((Map)m).Convert(i).ToString());
+
+                    
                     i++;
                 }
                 else//Scripts
@@ -678,10 +687,12 @@ namespace SMU_Mapper.Classes
 
         public CompilerResults Compile(string outFile)
         {
+            string GlobalCode = Properties.Resources.Global;
             string CreateAccesDatabase = Properties.Resources.CreateAccesDatabase;
             string ClassCode = Properties.Resources.Classes;
-            //string functions; 
-
+            string ErrorInfoCode = Properties.Resources.ErrorInfo;
+            string StringExtensions = Properties.Resources.StringExtensions; 
+            
             var csc = new CSharpCodeProvider(new Dictionary<string, string>() { { "CompilerVersion", "v4.0" }, { "Platform", "x64" } });
             var parameters = new CompilerParameters(new[] { "System.dll", "mscorlib.dll", "System.Core.dll", "System.Xml.dll", "System.Xml.Linq.dll", "System.Data.dll" }, outFile, false);
             parameters.ReferencedAssemblies.Add(@"System.Data.SqlServerCe.dll");
@@ -706,7 +717,15 @@ namespace SMU_Mapper.Classes
             using System.Collections;
             using System.Collections.Generic;
             using System.Data.SqlServerCe;
-           
+            using System.ComponentModel;
+            using System.IO;
+            using System.Diagnostics;
+
+            {11}
+
+            {10}
+
+            {9}
             
             {7}
 
@@ -727,11 +746,18 @@ namespace SMU_Mapper.Classes
 
                 public static void Main(string[] args) 
                 {{
+                    Global.LogFile.AutoFlush = true;
+                    if (args.Contains(""-nowarn"")) Global._DisableWarnings = true;
+                    Stopwatch stopWatch = new Stopwatch();
+                    stopWatch.Start();
                     
+                    
+                    int _maxCount = {8};
                     //bool db_result = CreateNewAccessDatabase();
-                    
+                   
+                    (""Loading XML - "" + args[0]).Print();
                     {0} = XElement.Load(args[0]);
-                    System.Console.WriteLine(""XML loaded."");
+                    
                     _ns = {0}.GetDefaultNamespace();
                     IEnumerable<XElement> {1} =  Enumerable.Empty<XElement>();
                     IEnumerable<XElement> {4} =  Enumerable.Empty<XElement>();
@@ -743,18 +769,41 @@ namespace SMU_Mapper.Classes
                     Classes._IMAN_master_form = _IMAN_master_form;
 
                     Classes._ReadXML();
-                    System.Console.WriteLine(""Caching Complete."");
+                    (""Caching Complete"").Print();
 
-                   {2}
-
-                    {0}.Save(args[1]);
+                    {2}
                     
-                }}", Extensions.xmlFile, Extensions.queryName, MapCode, LookupCode, Extensions.AttrChkQueryName, VariableCode, refTbl.ToString(), ClassCode);
+                    (""Saving mapped XML - "" + args[1]).Print();
+                    {0}.Save(args[1]);
+
+                    stopWatch.Stop();
+                    System.TimeSpan ts = stopWatch.Elapsed;
+                    string elapsedTime = System.String.Format(""{{0:00}}:{{1:00}}.{{2:00}}"",ts.Minutes, ts.Seconds,ts.Milliseconds / 10);
+                    (""Total Duration - "" + elapsedTime).Print();
+
+                    System.Console.WriteLine(""Writing log file"");
+                    ("""").Print();   
+
+                    Global._errList.Print();
+                    Global.LogFile.Close();
+                    
+                }}", Extensions.xmlFile,        //0
+                Extensions.queryName,           //1
+                MapCode,                        //2
+                LookupCode,                     //3
+                Extensions.AttrChkQueryName,    //4
+                VariableCode,                   //5
+                refTbl.ToString(),              //6
+                ClassCode,                      //7
+                TotalMapCount.ToString(),       //8
+                StringExtensions,               //9
+                ErrorInfoCode,                  //10   
+                GlobalCode);                    //11
+
 
 
             string CompileCode = Properties.Resources.CompileCode;
             Code.Append(CompileCode);
-
 
             Code.AppendLine(FunctionCode);
 
@@ -771,10 +820,7 @@ namespace SMU_Mapper.Classes
                 error.Line + ": " + error.ErrorText
                 ));
 
-
             return results;
         }
-
-
     }
 }
