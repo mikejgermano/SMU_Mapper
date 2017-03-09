@@ -207,9 +207,63 @@ namespace SMU_Mapper.Classes
 
         public static string[] getRecordedMaps(Maps m)
         {
-            var maps = m.Items.Where(x => x.GetType() == typeof(Map)).Cast<Map>().Where(x => x.srccheck != null).Select(x => x.b).ToArray();
+            List<string> RecordedMapsList = new List<string>();
 
-            return maps;
+            var maps = m.Items.Where(x => x.GetType() == typeof(Map)).Cast<Map>().Where(x => x.srccheck != null && x.a != x.b).Select(x => x.a).Distinct().ToArray();
+
+            foreach(var map in maps)
+            {
+                RecordedMapsList.Add(map);
+                var classes = getFullModel(map, m);
+                if(classes != null)
+                RecordedMapsList.AddRange(classes);
+            }
+
+            return RecordedMapsList.Distinct().ToArray();
+        }
+
+        public static string[] getToRecordedMaps(Maps m)
+        {
+            List<string> RecordedMapsList = new List<string>();
+
+            var maps = m.Items.Where(x => x.GetType() == typeof(Map)).Cast<Map>().Where(x => x.srccheck != null && x.a != x.b).Select(x => x.b).Distinct().ToArray();
+
+            foreach (var map in maps)
+            {
+                RecordedMapsList.Add(map);
+                var classes = getFullModel(map, m);
+                if (classes != null)
+                    RecordedMapsList.AddRange(classes);
+            }
+
+            return RecordedMapsList.Distinct().ToArray();
+        }
+
+        public static Dictionary<string,string> getOneToOneMaps(Maps m,string[] MapChanges)
+        {
+            Dictionary<string, string> MapList = new Dictionary<string, string>();
+
+            var maps = m.Items.Where(x => x.GetType() == typeof(Map)).Cast<Map>().Where(x => x.srccheck == null && x.a != x.b && !MapChanges.Contains(x.a)).Select(x => new {From = getFullModel(x.a,m), To = getFullModel(x.b, m) });
+
+            var mapSrc = maps.SelectMany(x => x.From).ToArray();
+            var mapTgt = maps.SelectMany(x => x.To).ToArray();
+
+            for(int i =0;i< mapSrc.Count(); i++)
+            {
+                MapList[mapSrc[i]] = mapTgt[i];
+            }
+
+            return MapList;
+        }
+
+        private static string[] getFullModel(string tclass, Maps m)
+        {
+            var classes = m.header.model.classes;
+            if (classes == null) return null;
+
+            var model = classes.Where(x => x.item == tclass || x.itemrevision == tclass).Select(x=>new string[] {x.item,x.itemrevision,x.masterform,x.masterformS,x.masterformRev,x.masterformRevS}).FirstOrDefault();
+
+            return model;
         }
 
         private static string ConvertMapAttrCheck(MapAttrCheck mCheck, string alias)
@@ -546,7 +600,8 @@ namespace SMU_Mapper.Classes
         private string FunctionCode;
         private string LookupCode;
         private string VariableCode;
-        private string[] MapChanges;
+        public string[] MapChanges, ToMapChanges;
+        public Dictionary<string, string> One2OneMaps = new Dictionary<string, string>();
         private HeaderModel model;
         private int TotalMapCount = 0;
 
@@ -556,6 +611,8 @@ namespace SMU_Mapper.Classes
             model = maps.header.model;
             Extensions.model = model;
             MapChanges = Extensions.getRecordedMaps(maps);
+            ToMapChanges = Extensions.getToRecordedMaps(maps);
+            One2OneMaps = Extensions.getOneToOneMaps(maps, MapChanges);
             FunctionCode = ConvertFunctions(maps.header);
             LookupCode = ConvertLookups(maps);
             VariableCode = ConvertVariables(maps.header);
@@ -660,7 +717,69 @@ namespace SMU_Mapper.Classes
 
             sb.Append("};");
 
-            return sb.ToString();
+            var last2 = MapChanges.Last();
+                StringBuilder sb2 = new StringBuilder("\npublic static string[] recordedClasses = new string[] {");
+
+            foreach (var m in MapChanges)
+            {
+                string s = String.Format("\"{0}\"",m);
+
+                if (m.Equals(last2))
+                {
+                    sb2.Append(s);
+                }
+                else
+                {
+                    s += ",";
+
+                    sb2.AppendLine(s);
+                }
+            }
+            
+            sb2.AppendLine("};");
+           
+            sb2.Append("public static Dictionary<string,byte> recordedToClasses = new Dictionary<string,byte> {");
+
+            for(int i = 0; i < ToMapChanges.Count(); i++)
+            {
+                string s = String.Format("{{\"{0}\",{1}}}", ToMapChanges[i],i);
+
+                if (i + 1 == ToMapChanges.Count())
+                {
+                    sb2.Append(s);
+                }
+                else
+                {
+                    s += ",";
+
+                    sb2.AppendLine(s);
+                }
+            }
+
+            sb2.AppendLine("};");
+
+            sb2.Append("public static Dictionary<string,string> OneToOneMaps = new Dictionary<string,string> {");
+            var last3 = One2OneMaps.Last();
+            foreach(var kv in One2OneMaps)
+            {
+                string s = String.Format("{{\"{0}\",\"{1}\"}}", kv.Key,kv.Value);
+
+                if (kv.Equals(last3))
+                {
+                    sb2.Append(s);
+                }
+                else
+                {
+                    s += ",";
+
+                    sb2.AppendLine(s);
+                }
+            }
+
+            sb2.AppendLine("};");
+
+
+            return sb.AppendLine(sb2.ToString()).ToString();
         }
 
         private string ConvertRefTable()
@@ -753,7 +872,7 @@ namespace SMU_Mapper.Classes
                     
                     
                     int _maxCount = {8};
-                    //bool db_result = CreateNewAccessDatabase();
+                    bool db_result = CreateDatabase(Classes.recordedClasses);
                    
                     (""Loading XML - "" + args[0]).Print();
                     {0} = XElement.Load(args[0]);
@@ -768,11 +887,17 @@ namespace SMU_Mapper.Classes
                     Classes._ns = _ns;
                     Classes._IMAN_master_form = _IMAN_master_form;
 
-                    Classes._ReadXML();
+                    (""Updating Stubs"").Print();
+                     _UpdateStubs();
+
+                     Classes._ReadXML();
                     (""Caching Complete"").Print();
 
                     {2}
-                    
+
+                    _AddChangeToDB();
+                    _ReconcileLocalStubs();
+
                     (""Saving mapped XML - "" + args[1]).Print();
                     {0}.Save(args[1]);
 

@@ -35,13 +35,14 @@ static class Classes
         {
             var islandElements = Islands[item.Attribute("island_id").Value];
 
-            var Revisions = from rev in islandElements.Where(x => x.Name.LocalName == sRev)
-                            join irm in islandElements.Where(x => x.Name.LocalName == "ImanRelation") on rev.Attribute("puid").Value equals irm.Attribute("primary_object").Value
-                            join mFormRev in islandElements.Where(x => x.Name.LocalName == "Form") on irm.Attribute("secondary_object").Value equals mFormRev.Attribute("puid").Value
-                            join mFormRevS in islandElements.Where(x => x.Name.LocalName == StorageClass) on mFormRev.Attribute("data_file").Value equals mFormRevS.Attribute("puid").Value into mf2
-                            from mFormRevS in mf2.DefaultIfEmpty()
-                            where irm.Attribute("relation_type").Value == _IMAN_master_form && rev.Attribute("items_tag").Value == item.Attribute("puid").Value
-                            select new Classes.RevisionClass { element = rev, masterRevForm = new RevisionClass.ItemRevMasterFormClass() { element = mFormRev, storage = mFormRevS } };
+            var Revisions = (from rev in islandElements.Where(x => x.Name.LocalName == sRev)
+                             where rev.Attribute("items_tag").Value == item.Attribute("puid").Value
+                             select new Classes.RevisionClass { element = rev, masterRevForm = new RevisionClass.ItemRevMasterFormClass() }).ToList();
+
+            foreach (var r in Revisions)
+            {
+                r.masterRevForm = new RevisionClass.ItemRevMasterFormClass(r.element, StorageClass);
+            }
 
             return Revisions;
         }

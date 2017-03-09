@@ -1,4 +1,4 @@
-public enum ErrorCodes
+﻿public enum ErrorCodes
 {
     ///<summary>Mapping has been skipped because it found zero source objects</summary>
     [Description("Mapping has been skipped because it found zero source objects")]
@@ -18,7 +18,12 @@ public enum ErrorCodes
     ///<summary>Deletion skipped for attribute because it does not exist on object</summary>
     [Description("Deletion skipped for attribute because it does not exist on object")]
     [ErrorType(ErrorTypes.Warning)]
-    DELETE_NULL_ATTRIBUTE
+    DELETE_NULL_ATTRIBUTE,
+
+    ///<summary>Class index could not be found for stubbing Database</summary>
+    [Description("Class index could not be found for stubbing Database")]
+    [ErrorType(ErrorTypes.FatalError)]
+    CLASS_INDEX_NOT_FOUND
 }
 public enum TCTypes {Attribute, Mapping, General, WorkspaceObject, Item, ItemMaster, ItemMasterS, ItemRevision, ItemRevisionMaster, ItemRevMasterS, Dataset, BOM, Relation, SystemObject };
 public enum ErrorTypes { SevereError = 0, FatalError = 1, Warning = 2 };
@@ -87,7 +92,7 @@ public class ErrorList : List<ErrorList.ErrorInfo>
             this.UID = UID;
             this.ObjectType = ObjectType;
             this.TCType = TCType;
-            TCID = string.Join(((char)31).ToString(), GSID);
+            TCID = string.Join("¬", GSID);
         }
     }
 }

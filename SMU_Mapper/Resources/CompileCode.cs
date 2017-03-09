@@ -148,7 +148,80 @@ private static Dictionary<string, string> LoadLookup(string path)
              return ("#" + elemId);
             }
 
-    private static void _RecordTypeChange(string puid, string from, string to)
+private static void _UpdateStubs()
+{
+    var Stubs = _xml.Elements(_ns + "POM_stub");
+    List<XElement> RecordStubs = new List<XElement>();
+    int one2one = 0, PartialMap =0;
+    foreach (var stub in Stubs)
+    {
+        string oType = stub.Attribute("object_type").Value;
+
+       
+
+        //One2One
+        if (Classes.OneToOneMaps.ContainsKey(oType))
+        {
+            one2one++;
+            stub.Attribute("object_type").Value = Classes.OneToOneMaps[oType];
+
+            if (stub.Attribute("object_class").Value != "Form")
+            {
+                stub.Attribute("object_class").Value = Classes.OneToOneMaps[oType];
+            }
+        }
+        else if (Classes.recordedClasses.Contains(oType)) { RecordStubs.Add(stub); }
+    }
+
+    var groups = RecordStubs.GroupBy(x => x.Attribute("object_type").Value);
+
+    foreach (var group in groups)
+    {
+        SqlCeConnection connection = new SqlCeConnection("DataSource =\".\\Data\\" + group.Key + ".sdf\"");
+        SqlCeCommand cmd = new SqlCeCommand("SELECT TO_TYPE FROM POM_CHANGES WHERE PUID = @id", connection);
+        cmd.Parameters.Add("@id", System.Data.SqlDbType.NVarChar, 14);
+
+
+        connection.Open();
+        foreach (var g in group)
+        {
+            cmd.Parameters[0].Value = g.Attribute("object_uid").Value;
+            object value = cmd.ExecuteScalar();
+
+            if (value == null) continue;
+            PartialMap++;
+            string toClass = Classes.recordedToClasses.Single(x => x.Value == (byte)value).Key;
+
+            g.Attribute("object_type").Value = toClass;
+
+            if (g.Attribute("object_class").Value != "Form")
+            {
+                g.Attribute("object_class").Value = toClass;
+            }
+        }
+
+        connection.Close();
+    }
+
+    ("One2One Stubs: " + one2one.ToString()).Log();
+    ("PartialMap Stubs: " + PartialMap.ToString()).Log();
+
+}
+
+private static void _ReconcileLocalStubs()
+    {
+        var stubs = from stub in _xml.Elements(_ns + "POM_stub")
+                    join chg in _TypeChangeLog on stub.Attribute("object_uid").Value equals chg.Key
+                    select new { Stub = stub, ChangeRecord = chg.Value };
+
+        foreach (var e in stubs)
+        {
+            e.Stub.SetAttributeValue("object_class", e.ChangeRecord[1]);
+            e.Stub.SetAttributeValue("object_type", e.ChangeRecord[1]);
+        }
+    }
+
+private static void _RecordTypeChange(string puid, string from, string to)
     {
             _TypeChangeLog[puid] = new string[2]{from,to};
     }
@@ -196,7 +269,7 @@ private static void _TCPropagateItem(XElement _item, string sItem, string sRev, 
         }
         else
         {
-            ErrorList.ErrorInfo err = new ErrorList.ErrorInfo(Global._mapCounter, ErrorCodes.MISSING_MASTERFORM, tc.element.Attribute("puid").Value, tc.element.Name.LocalName, TCTypes.ItemRevision, tc.element.Attribute("item_id").Value, tc.element.Attribute("item_revision_id").Value);
+            ErrorList.ErrorInfo err = new ErrorList.ErrorInfo(Global._mapCounter, ErrorCodes.MISSING_MASTERFORM, tc.element.Attribute("puid").Value, tc.element.Name.LocalName, TCTypes.ItemRevision, Item.element.Attribute("item_id").Value, tc.element.Attribute("item_revision_id").Value);
             Global._errList.Add(err);
         }
 
@@ -252,7 +325,7 @@ private static void _TCPropagateItemRevision(XElement _rev, string sItem, string
         }
         else
         {
-            ErrorList.ErrorInfo err = new ErrorList.ErrorInfo(Global._mapCounter, ErrorCodes.MISSING_MASTERFORM, tc.element.Attribute("puid").Value, tc.element.Name.LocalName, TCTypes.ItemRevision, tc.item.element.Attribute("item_id").Value, tc.element.Attribute("item_revision_id").Value);
+            ErrorList.ErrorInfo err = new ErrorList.ErrorInfo(Global._mapCounter, ErrorCodes.MISSING_MASTERFORM, tc.element.Attribute("puid").Value, tc.element.Name.LocalName, TCTypes.ItemRevision, Revision.item.element.Attribute("item_id").Value, tc.element.Attribute("item_revision_id").Value);
             Global._errList.Add(err);
         }
 

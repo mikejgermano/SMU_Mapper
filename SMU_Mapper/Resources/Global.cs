@@ -33,17 +33,32 @@ public static class Global
             LogFile.WriteLine("[" + System.DateTime.Now.ToString("dd-MMM-yy HH:mm") + "] " + line);
     }
 
+    public static void Log(this string line)
+    {
+        if (line == "")
+            LogFile.WriteLine("");
+        else
+            LogFile.WriteLine("[" + System.DateTime.Now.ToString("dd-MMM-yy HH:mm") + "] " + line);
+    }
+
     public static void Log(this ErrorList.ErrorInfo e)
     {
         if (e.UID == "")
         {
-            string logGFormat = "[{5}] <Map#{6}> {0} [{1}] - {2} -> ({3}:{4})";
+            string logGFormat = "[{5}] <Map#{6}> {0} [{1}] - {2} -> {3}: |{4}|";
             LogFile.WriteLine(string.Format(logGFormat, e.ErrType, e.code, e.Message, e.TCType, e.TCID, System.DateTime.Now.ToString("dd-MMM-yy HH:mm"), e.MapNum));
         }
         else
         {
-            string logFormat = "[{7}] <Map#{8}> {0} [{1}] - {2} -> PUID:{3} ObjectType:{4} ({5}:{6})";
+            string logFormat = "[{7}] <Map#{8}> {0} [{1}] - {2} -> PUID:{3} ObjectType:{4} {5}: |{6}|";
             LogFile.WriteLine(string.Format(logFormat, e.ErrType, e.code, e.Message, e.UID, e.ObjectType, e.TCType, e.TCID, System.DateTime.Now.ToString("dd-MMM-yy HH:mm"), e.MapNum));
+        }
+
+        if (e.ErrType == ErrorTypes.FatalError)
+        {
+
+            WriteLine("The utility has encountered a fatal error. Exiting...", System.ConsoleColor.Red);
+            System.Environment.Exit(1);
         }
     }
     public static void Print(this ErrorList e)
@@ -60,6 +75,15 @@ public static class Global
         System.Console.ForegroundColor = fcolor;
         System.Console.ForegroundColor = System.ConsoleColor.Yellow;
         System.Console.WriteLine("Warnings found : " + warnings);
+        System.Console.ForegroundColor = fcolor;
+        System.Console.WriteLine("Check log for more details");
+    }
+
+    public static void WriteLine(string message, System.ConsoleColor color)
+    {
+        var fcolor = System.Console.ForegroundColor;
+        System.Console.ForegroundColor = color;
+        System.Console.WriteLine(message);
         System.Console.ForegroundColor = fcolor;
         System.Console.WriteLine("Check log for more details");
     }
