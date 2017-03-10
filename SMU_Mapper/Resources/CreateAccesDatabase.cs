@@ -3,6 +3,7 @@ public static bool CreateDatabase(string[] classes)
     if (Directory.Exists("Data") && Directory.GetFiles("Data").Count() > 0)
         return false;
 
+    Directory.CreateDirectory("Data");
 
     Global.Print("Create Database");
     bool result = true;
