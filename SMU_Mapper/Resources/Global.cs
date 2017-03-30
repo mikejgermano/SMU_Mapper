@@ -58,7 +58,7 @@ public static class Global
         {
 
             WriteLine("The utility has encountered a fatal error. Exiting...", System.ConsoleColor.Red);
-            System.Environment.Exit(1);
+            System.Environment.Exit((int)e.code);
         }
     }
     public static void Print(this ErrorList e)

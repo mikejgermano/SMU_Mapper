@@ -100,11 +100,20 @@ static class Classes
         {
             var islandElements = Islands[rev.Attribute("island_id").Value];
 
-            ItemClass qItem = (from item in islandElements.Where(x => x.Name.LocalName == sitem)
-                               where item.Attribute("puid").Value == rev.Attribute("items_tag").Value
-                               select new ItemClass(item, srev, sMasterFormS, smasterRevFormS)).Single();
+            try
+            {
+                ItemClass qItem = (from item in islandElements.Where(x => x.Name.LocalName == sitem)
+                                   where item.Attribute("puid").Value == rev.Attribute("items_tag").Value
+                                   select new ItemClass(item, srev, sMasterFormS, smasterRevFormS)).Single();
 
-            return qItem;
+                return qItem;
+            }
+            catch (System.Exception ex)
+            {
+                Global._errList.Add(new ErrorList.ErrorInfo(0, ErrorCodes.ITEM_NOT_FOUND, rev.Attribute("puid").Value, srev, TCTypes.ItemRevision, "<" + rev.Attribute("items_tag").Value + ">", rev.Attribute("item_revision_id").Value));
+
+                return null;
+            }
         }
 
     }

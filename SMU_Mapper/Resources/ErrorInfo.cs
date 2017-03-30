@@ -20,10 +20,17 @@
     [ErrorType(ErrorTypes.Warning)]
     DELETE_NULL_ATTRIBUTE,
 
+    ///<summary>Item could not be found for revision</summary>
+    [Description("Item could not be found for revision")]
+    [ErrorType(ErrorTypes.FatalError)]
+    ITEM_NOT_FOUND = 0x1,
+
     ///<summary>Class index could not be found for stubbing Database</summary>
     [Description("Class index could not be found for stubbing Database")]
     [ErrorType(ErrorTypes.FatalError)]
-    CLASS_INDEX_NOT_FOUND
+    CLASS_INDEX_NOT_FOUND = 0x2,
+
+   
 }
 public enum TCTypes {Attribute, Mapping, General, WorkspaceObject, Item, ItemMaster, ItemMasterS, ItemRevision, ItemRevisionMaster, ItemRevMasterS, Dataset, BOM, Relation, SystemObject };
 public enum ErrorTypes { SevereError = 0, FatalError = 1, Warning = 2 };

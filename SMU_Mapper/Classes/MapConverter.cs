@@ -863,7 +863,7 @@ namespace SMU_Mapper.Classes
 
                 {6}
 
-                public static void Main(string[] args) 
+                public static int Main(string[] args) 
                 {{
                     Global.LogFile.AutoFlush = true;
                     if (args.Contains(""-nowarn"")) Global._DisableWarnings = true;
@@ -911,6 +911,8 @@ namespace SMU_Mapper.Classes
 
                     Global._errList.Print();
                     Global.LogFile.Close();
+
+                    return 0;
                     
                 }}", Extensions.xmlFile,        //0
                 Extensions.queryName,           //1
