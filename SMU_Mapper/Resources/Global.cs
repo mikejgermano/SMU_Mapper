@@ -2,8 +2,8 @@ public static class Global
 {
     public static int _mapCounter = 0;
 
-    public static bool _DisableWarnings = false;
-    public static StreamWriter LogFile = new StreamWriter("transformer.log", false);
+    public static bool _DisableWarnings = true;
+    public static StreamWriter LogFile;
     public static ErrorList _errList = new ErrorList();
     public static void SetAttrValue(this XElement el, XName name, object value)
     {
@@ -58,7 +58,7 @@ public static class Global
         {
 
             WriteLine("The utility has encountered a fatal error. Exiting...", System.ConsoleColor.Red);
-            System.Environment.Exit((int)e.code);
+            System.Environment.Exit(1);
         }
     }
     public static void Print(this ErrorList e)

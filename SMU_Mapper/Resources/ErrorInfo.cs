@@ -10,6 +10,11 @@
     [ErrorType(ErrorTypes.SevereError)]
     MISSING_MASTERFORM,
 
+    ///<summary>Item has no revisions</summary>
+    [Description("Item has no revisions")]
+    [ErrorType(ErrorTypes.SevereError)]
+    REVISIONS_NOT_FOUND,
+
     ///<summary>Attribute was added to current element because it did not exist</summary>
     [Description("Attribute was added to current element because it did not exist")]
     [ErrorType(ErrorTypes.Warning)]
@@ -23,17 +28,20 @@
     ///<summary>Item could not be found for revision</summary>
     [Description("Item could not be found for revision")]
     [ErrorType(ErrorTypes.FatalError)]
-    ITEM_NOT_FOUND = 0x1,
+    ITEM_NOT_FOUND,
 
     ///<summary>Class index could not be found for stubbing Database</summary>
     [Description("Class index could not be found for stubbing Database")]
     [ErrorType(ErrorTypes.FatalError)]
-    CLASS_INDEX_NOT_FOUND = 0x2,
+    CLASS_INDEX_NOT_FOUND,
 
-   
+    ///<summary>XML file is not well-formed and could not be loaded</summary>
+    [Description("XML file is not well-formed and could not be loaded")]
+    [ErrorType(ErrorTypes.FatalError)]
+    XML_MALFORMED,
 }
 public enum TCTypes {Attribute, Mapping, General, WorkspaceObject, Item, ItemMaster, ItemMasterS, ItemRevision, ItemRevisionMaster, ItemRevMasterS, Dataset, BOM, Relation, SystemObject };
-public enum ErrorTypes { SevereError = 0, FatalError = 1, Warning = 2 };
+public enum ErrorTypes { SevereError = 0, FatalError = 1, Warning = -1 };
 public class ErrorType : System.Attribute
 {
 

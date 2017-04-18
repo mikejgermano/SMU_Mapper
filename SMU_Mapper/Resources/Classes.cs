@@ -39,6 +39,16 @@ static class Classes
                              where rev.Attribute("items_tag").Value == item.Attribute("puid").Value
                              select new Classes.RevisionClass { element = rev, masterRevForm = new RevisionClass.ItemRevMasterFormClass() }).ToList();
 
+            if (Revisions.Count() == 0)
+                Revisions = (from rev in _xml.Elements(_ns + sRev)
+                             where rev.Attribute("items_tag").Value == item.Attribute("puid").Value
+                             select new Classes.RevisionClass { element = rev, masterRevForm = new RevisionClass.ItemRevMasterFormClass() }).ToList();
+
+            if (Revisions.Count() == 0)
+            {
+                Global._errList.Add(new ErrorList.ErrorInfo(Global._mapCounter, ErrorCodes.REVISIONS_NOT_FOUND, item.Attribute("puid").Value, sRev, TCTypes.Item, item.Attribute("item_id").Value));
+            }
+
             foreach (var r in Revisions)
             {
                 r.masterRevForm = new RevisionClass.ItemRevMasterFormClass(r.element, StorageClass);
@@ -46,6 +56,7 @@ static class Classes
 
             return Revisions;
         }
+
     }
 
     public class ItemMasterFormClass
@@ -104,7 +115,16 @@ static class Classes
             {
                 ItemClass qItem = (from item in islandElements.Where(x => x.Name.LocalName == sitem)
                                    where item.Attribute("puid").Value == rev.Attribute("items_tag").Value
-                                   select new ItemClass(item, srev, sMasterFormS, smasterRevFormS)).Single();
+                                   select new ItemClass(item, srev, sMasterFormS, smasterRevFormS)).SingleOrDefault();
+
+
+                //check if in another island
+                if (qItem == null)
+                {
+                    qItem = (from item in _xml.Elements(_ns + sitem)
+                             where item.Attribute("puid").Value == rev.Attribute("items_tag").Value
+                             select new ItemClass(item, srev, sMasterFormS, smasterRevFormS)).Single();
+                }
 
                 return qItem;
             }

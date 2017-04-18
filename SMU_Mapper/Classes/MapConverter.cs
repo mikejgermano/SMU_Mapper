@@ -830,6 +830,8 @@ namespace SMU_Mapper.Classes
 
             ClassCode = ClassCode.Insert(23, modelTbl);
 
+            string logRegex = @"-log=(?:\"")?(.+)(?:\"")?";
+
             Code.AppendFormat(@"
             using System.Linq;
             using System.Xml.Linq;
@@ -865,8 +867,17 @@ namespace SMU_Mapper.Classes
 
                 public static int Main(string[] args) 
                 {{
-                    Global.LogFile.AutoFlush = true;
-                    if (args.Contains(""-nowarn"")) Global._DisableWarnings = true;
+                   
+                    string log = args.ToList().Where(x => System.Text.RegularExpressions.Regex.IsMatch(x, ""{12}"",System.Text.RegularExpressions.RegexOptions.IgnoreCase)).SingleOrDefault();
+
+                    if (log != null)
+                    {{
+                        string logfile = System.Text.RegularExpressions.Regex.Match(log,""{12}"").Groups[1].Value;
+                        Global.LogFile = new StreamWriter(logfile, false);
+                        Global.LogFile.AutoFlush = true;
+                    }}
+
+                    if (args.Contains(""-warn"")) Global._DisableWarnings = false;
                     Stopwatch stopWatch = new Stopwatch();
                     stopWatch.Start();
                     
@@ -875,8 +886,8 @@ namespace SMU_Mapper.Classes
                     bool db_result = CreateDatabase(Classes.recordedClasses);
                    
                     (""Loading XML - "" + args[0]).Print();
-                    {0} = XElement.Load(args[0]);
-                    
+                    try{{{0} = XElement.Load(args[0]);}}catch(System.Exception ex){{Global._errList.Add(new ErrorList.ErrorInfo(0, ErrorCodes.XML_MALFORMED, """", """",TCTypes.General, """"));}}
+
                     _ns = {0}.GetDefaultNamespace();
                     IEnumerable<XElement> {1} =  Enumerable.Empty<XElement>();
                     IEnumerable<XElement> {4} =  Enumerable.Empty<XElement>();
@@ -925,7 +936,9 @@ namespace SMU_Mapper.Classes
                 TotalMapCount.ToString(),       //8
                 StringExtensions,               //9
                 ErrorInfoCode,                  //10   
-                GlobalCode);                    //11
+                GlobalCode,                     //11
+                logRegex                        //12    
+                );                   
 
 
 
