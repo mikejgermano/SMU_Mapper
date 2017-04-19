@@ -244,13 +244,40 @@ namespace SMU_Mapper.Classes
             Dictionary<string, string> MapList = new Dictionary<string, string>();
 
             var maps = m.Items.Where(x => x.GetType() == typeof(Map)).Cast<Map>().Where(x => x.srccheck == null && x.a != x.b && !MapChanges.Contains(x.a)).Select(x => new {From = getFullModel(x.a,m), To = getFullModel(x.b, m) });
+            List<string[]> mapSrc = new List<string[]>();
+            List<string[]> mapTgt = new List<string[]>();
+            
 
-            var mapSrc = maps.SelectMany(x => x.From).ToArray();
-            var mapTgt = maps.SelectMany(x => x.To).ToArray();
-
-            for(int i =0;i< mapSrc.Count(); i++)
+            List<string> invalid_maps = new List<string>();
+            string invalidMapRegex = "Cannot map {0} to {1} - {2} is not defined in model";
+            foreach (var map in m.Items.Where(x => x.GetType() == typeof(Map)).Cast<Map>().Where(x => x.srccheck == null && x.a != x.b && !MapChanges.Contains(x.a)))
             {
-                MapList[mapSrc[i]] = mapTgt[i];
+                var src = getFullModel(map.a, m);
+                var trgt = getFullModel(map.b, m);
+
+                if(src == null && trgt != null)
+                    invalid_maps.Add(String.Format(invalidMapRegex, map.a, map.b, map.a));
+                else if (trgt == null && src != null)
+                    invalid_maps.Add(String.Format(invalidMapRegex, map.a, map.b, map.b));
+                else if( src != null && trgt != null)
+                {
+                    mapSrc.Add(src);
+                    mapTgt.Add(trgt);
+                }
+            }
+
+            if (invalid_maps.Count() > 0)
+            {
+                invalid_maps.ForEach(x => Console.WriteLine(x));
+                return null;
+            }
+
+            var mapSrcArr = mapSrc.SelectMany(x => x).ToArray();
+            var mapTgtArr = mapTgt.SelectMany(x => x).ToArray();
+
+            for(int i =0;i< mapSrcArr.Count(); i++)
+            {
+                MapList[mapSrcArr[i]] = mapTgtArr[i];
             }
 
             return MapList;
@@ -308,8 +335,6 @@ namespace SMU_Mapper.Classes
         {
             string value = mAttribute.value;
 
-
-
             value = _ConvertAttributeString(alias, value);
             value = _ConvertVariableString("", value);
 
@@ -361,7 +386,7 @@ namespace SMU_Mapper.Classes
 
             if (mAttr.copy == null)
             {
-                string sb = "{0}.SetAttrValue(\"{1}\",{0}.Attribute(\"{2}\").Value);{0}.Attribute(\"{2}\").Remove();";
+                string sb = "{0}.SetAttrValue(\"{1}\",{0}.GetAttrValue(\"{2}\"));if({0}.Attribute(\"{2}\") != null){0}.Attribute(\"{2}\").Remove();";
 
                 string queryBuild = String.Format(sb, alias, mAttr.b, mAttr.a);
 
@@ -369,7 +394,7 @@ namespace SMU_Mapper.Classes
             }
             else
             {
-                string sb = "{0}.SetAttrValue(\"{1}\",{0}.Attribute(\"{2}\").Value);";
+                string sb = "{0}.SetAttrValue(\"{1}\",{0}.GetAttrValue(\"{2}\"));";
 
                 string queryBuild = String.Format(sb, alias, mAttr.b, mAttr.a);
 
@@ -383,7 +408,7 @@ namespace SMU_Mapper.Classes
         {
             if (mAttr.copy == null)
             {
-                string sb = "{0}.SetAttrValue(\"{1}\",{0}.Attribute(\"{2}\").Value);{0}.Attribute(\"{2}\").Remove();";
+                string sb = "{0}.SetAttrValue(\"{1}\",{0}.GetAttrValue(\"{2}\"));if({0}.Attribute(\"{2}\") != null){0}.Attribute(\"{2}\").Remove();";
 
                 string queryBuild = String.Format(sb, alias, mAttr.b, mAttr.a);
 
@@ -391,7 +416,7 @@ namespace SMU_Mapper.Classes
             }
             else
             {
-                string sb = "{0}.SetAttrValue(\"{1}\",{0}.Attribute(\"{2}\").Value);";
+                string sb = "{0}.SetAttrValue(\"{1}\",{0}.GetAttrValue(\"{2}\").Value);";
 
                 string queryBuild = String.Format(sb, alias, mAttr.b, mAttr.a);
 
@@ -485,13 +510,13 @@ namespace SMU_Mapper.Classes
 
                 string patternJoins = @"([a-zA-z0-9_]+)@([a-zA-z0-9_]+)";
                 result = _RefReplace(result, patternRefJoin);
-                result = Regex.Replace(result, patternJoins, "$1.Attribute(\"" + "$2" + "\").Value");
+                result = Regex.Replace(result, patternJoins, "$1.GetAttrValue(\"" + "$2" + "\")");
 
                 string pattern = @"@([\w]*)";
                 result = _RefReplace(result, patternRef);
-                result = Regex.Replace(result, pattern, alias + ".Attribute(\"" + "$1" + "\").Value");
+                result = Regex.Replace(result, pattern, alias + ".GetAttrValue(\"" + "$1" + "\")");
 
-                result = result.Replace(".Attribute(\"release_status_list\").Value", ".Attribute(\"release_status_list\")");
+                result = result.Replace(".GetAttrValue(\"release_status_list\")", ".Attribute(\"release_status_list\")");
 
                 return result;
             }
@@ -717,7 +742,7 @@ namespace SMU_Mapper.Classes
 
             sb.Append("};");
 
-            var last2 = MapChanges.Last();
+            var last2 = MapChanges.LastOrDefault();
                 StringBuilder sb2 = new StringBuilder("\npublic static string[] recordedClasses = new string[] {");
 
             foreach (var m in MapChanges)
@@ -759,7 +784,7 @@ namespace SMU_Mapper.Classes
             sb2.AppendLine("};");
 
             sb2.Append("public static Dictionary<string,string> OneToOneMaps = new Dictionary<string,string> {");
-            var last3 = One2OneMaps.Last();
+            var last3 = One2OneMaps.LastOrDefault();
             foreach(var kv in One2OneMaps)
             {
                 string s = String.Format("{{\"{0}\",\"{1}\"}}", kv.Key,kv.Value);
@@ -857,13 +882,31 @@ namespace SMU_Mapper.Classes
                 private static XElement {0} = null;
                 private static XNamespace _ns = null;
 
-                public static Dictionary<string, Dictionary<string, string>> _lookups = LoadAllLookups({3});
+                public static Dictionary<string, Dictionary<string, string>> _lookups = new Dictionary<string, Dictionary<string, string>>();
                 public static Dictionary<string,string> _variables = new Dictionary<string,string>{{{5}}};
                 public static Dictionary<string,string[]> _TypeChangeLog = new Dictionary<string,string[]>();
 
                 public static string _IMAN_master_form = null;
 
                 {6}
+
+                public static Dictionary<string, string> UserRef = new Dictionary<string, string>();
+                public static Dictionary<string, string> GroupRef = new Dictionary<string, string>();
+                public static Dictionary<string, string> UnitOfMeasureRef = new Dictionary<string, string>();
+                public static Dictionary<string, string> ImanVolumeRef = new Dictionary<string, string>();
+                public static Dictionary<string, string> DatasetTypeRef = new Dictionary<string, string>();
+                public static Dictionary<string, string> ImanTypeRef = new Dictionary<string, string>();
+                public static Dictionary<string, string> ToolRef = new Dictionary<string, string>();
+
+                public static Dictionary<string, string> UserRefVal = new Dictionary<string, string>();
+                public static Dictionary<string, string> GroupRefVal = new Dictionary<string, string>();
+                public static Dictionary<string, string> UnitOfMeasureRefVal = new Dictionary<string, string>();
+                public static Dictionary<string, string> ImanVolumeRefVal = new Dictionary<string, string>();
+                public static Dictionary<string, string> DatasetTypeRefVal = new Dictionary<string, string>();
+                public static Dictionary<string, string> ImanTypeRefVal = new Dictionary<string, string>();
+                public static Dictionary<string, string> ToolRefVal = new Dictionary<string, string>();
+
+               public static Dictionary<string, XElement> ReleaseStatusRef = new Dictionary<string, XElement>();
 
                 public static int Main(string[] args) 
                 {{
@@ -881,7 +924,8 @@ namespace SMU_Mapper.Classes
                     Stopwatch stopWatch = new Stopwatch();
                     stopWatch.Start();
                     
-                    
+                    _lookups = LoadAllLookups({3});               
+
                     int _maxCount = {8};
                     bool db_result = CreateDatabase(Classes.recordedClasses);
                    
@@ -891,6 +935,8 @@ namespace SMU_Mapper.Classes
                     _ns = {0}.GetDefaultNamespace();
                     IEnumerable<XElement> {1} =  Enumerable.Empty<XElement>();
                     IEnumerable<XElement> {4} =  Enumerable.Empty<XElement>();
+
+                    _LoadRefTables();
 
                     string _IMAN_master_form = _GetRef(""relation_type"", ""IMAN_master_form"");
 

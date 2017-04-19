@@ -5,6 +5,21 @@ public static class Global
     public static bool _DisableWarnings = true;
     public static StreamWriter LogFile;
     public static ErrorList _errList = new ErrorList();
+
+
+    public static string GetAttrValue(this XElement el, XName name)
+    {
+        var attr = el.Attribute(name);
+
+        if (attr == null)
+        {
+            Global._errList.Add(new ErrorList.ErrorInfo(Global._mapCounter, ErrorCodes.ATTRIBUTE_NULL, el.Attribute("puid").Value, el.Attribute("object_type").Value, TCTypes.WorkspaceObject, name.LocalName));
+            return null;
+        }
+
+
+        return attr.Value;
+    }
     public static void SetAttrValue(this XElement el, XName name, object value)
     {
         if (el.Attribute(name) == null)

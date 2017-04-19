@@ -39,6 +39,11 @@
     [Description("XML file is not well-formed and could not be loaded")]
     [ErrorType(ErrorTypes.FatalError)]
     XML_MALFORMED,
+
+    ///<summary>Lookup contains duplicate key</summary>
+    [Description("Lookup contains duplicate key")]
+    [ErrorType(ErrorTypes.FatalError)]
+    DUPLICATE_LOOKUP_KEY,
 }
 public enum TCTypes {Attribute, Mapping, General, WorkspaceObject, Item, ItemMaster, ItemMasterS, ItemRevision, ItemRevisionMaster, ItemRevMasterS, Dataset, BOM, Relation, SystemObject };
 public enum ErrorTypes { SevereError = 0, FatalError = 1, Warning = -1 };

@@ -1,163 +1,272 @@
 private static Dictionary<string, string> LoadLookup(string path)
-                {
-                        Dictionary<string, string> LoadLookup_d = new Dictionary<string, string>();
-                        try
-                        {
-                            LoadLookup_d = System.IO.File.ReadAllLines(path).Select(x => x.Split('|')).ToDictionary(x => x[0], x => x[1]);
-      
-                            if(LoadLookup_d.Count() == 0)
-                            System.Console.WriteLine("Warning - " + System.IO.Path.GetFileName(path) + " is empty");
-                        }
-                        catch(System.IO.FileNotFoundException nf)
-                        {
-                            System.Console.WriteLine("Error - loading lookups, couldn't find the lookup file.\nCheck that your path is correct:\n" + nf.FileName);
-                            System.Environment.Exit(1);
-                        }
-                        catch (System.IndexOutOfRangeException)
-                        {
-                            System.Console.WriteLine("Error - loading lookup in " + System.IO.Path.GetFileName(path) +  "\n...most likely key/value pair is malformed");
-                            System.Environment.Exit(1);
-                        }
-
-                        return LoadLookup_d;
-                }
-
-                private static Dictionary<string, Dictionary<string, string>> LoadAllLookups(params string[][] lookups)
-                {
-                    Dictionary<string, Dictionary<string, string>> d = new Dictionary<string, Dictionary<string, string>>();
-
-                    foreach (string[] lookup in lookups)
-                    {
-                        d.Add(lookup[0], LoadLookup(lookup[1]));
-                    }
-
-                    return d;
-                }
-
-                private static string Lookup(string name, string key)
-                {
-
-                    Dictionary<string,string> d1;
-                    string value = null;
-
-                    if (_lookups.TryGetValue(name, out d1)) 
-                    {
-                        d1.TryGetValue(key, out value);
-                    }
-
-                    return value ?? key;
-
-                }
-
-             private static string VarLookup(string name)
-             {
-                    string value = null;
-
-                    if (!_variables.TryGetValue(name, out value))
-                    {
-                        //variable not found
-                    }
-                    return value;
-
-            }
-
-         private static string _GetRefVal(string attribute,string elemid)
-         {
-            string value = "";
-
-            if (elemid == "") return "";
-
-            elemid = elemid.Replace("#", "");
-
-            string RefType = refTable[attribute][0];
-            string RefAttr = refTable[attribute][1];
-
-            value = (from el in _xml.Elements(_ns + RefType)
-                       where el.Attribute("elemId").Value == elemid
-                       select el.Attribute(RefAttr).Value).Single();
-
-
-
-                return value;
-        }
-
-
-    private static string _GetRelSts(XAttribute attribute)
+{
+    Dictionary<string, string> LoadLookup_d = new Dictionary<string, string>();
+    try
     {
-        try{ 
-        if (attribute == null || attribute.Value == "") return "";
+        var lookups = System.IO.File.ReadAllLines(path).Select(x => x.Split('|'));
 
-        var els = _xml.Elements(_ns + "ReleaseStatus").Where(x => x.Attribute("puid").Value == attribute.Value).Select(x => x.Attribute("name").Value).ToArray();
-        string statuses = string.Join(",", els);
-
-            return statuses;
-        }
-        catch { return "";}
-     }
-
-    private static string _SetRelSts(XAttribute attribute, string Val)
-    {
-        string newPUID = "";
-
-        if (attribute == null || attribute.Value == "")
-        { }
-        else
+        foreach (var l in lookups)
         {
-        
-            if(Val == "")
+            if (!LoadLookup_d.ContainsKey(l[0]))
+                LoadLookup_d.Add(l[0], l[1]);
+            else
             {
-                return "";
-            }
-         
-
-            newPUID = attribute.Value;
-
-            var els = _xml.Elements(_ns + "ReleaseStatus").Where(x => x.Attribute("puid").Value == attribute.Value);
-
-            foreach (var el in els)
-            {
-
-                if (Val == null)
-                {
-                    newPUID = "";
-                    el.Remove();
-                }
-                else
-                el.SetAttributeValue("name", Val);
+                Global._errList.Add(new ErrorList.ErrorInfo(0, ErrorCodes.DUPLICATE_LOOKUP_KEY, "", "", TCTypes.General, path, l[0], l[1]));
             }
         }
 
-        return newPUID;
+        if (LoadLookup_d.Count() == 0)
+            System.Console.WriteLine("Warning - " + System.IO.Path.GetFileName(path) + " is empty");
+    }
+    catch (System.IO.FileNotFoundException nf)
+    {
+        System.Console.WriteLine("Error - loading lookups, couldn't find the lookup file.\nCheck that your path is correct:\n" + nf.FileName);
+        System.Environment.Exit(1);
+    }
+    catch (System.IndexOutOfRangeException)
+    {
+        System.Console.WriteLine("Error - loading lookup in " + System.IO.Path.GetFileName(path) + "\n...most likely key/value pair is malformed");
+        System.Environment.Exit(1);
+    }
+
+    return LoadLookup_d;
+}
+
+private static Dictionary<string, Dictionary<string, string>> LoadAllLookups(params string[][] lookups)
+{
+    Dictionary<string, Dictionary<string, string>> d = new Dictionary<string, Dictionary<string, string>>();
+
+    foreach (string[] lookup in lookups)
+    {
+        d.Add(lookup[0], LoadLookup(lookup[1]));
+    }
+
+    return d;
+}
+
+private static string Lookup(string name, string key)
+{
+
+    Dictionary<string, string> d1;
+    string value = null;
+
+    if (_lookups.TryGetValue(name, out d1))
+    {
+        d1.TryGetValue(key, out value);
+    }
+
+    return value ?? key;
+
+}
+
+private static string VarLookup(string name)
+{
+    string value = null;
+
+    if (!_variables.TryGetValue(name, out value))
+    {
+        //variable not found
+    }
+    return value;
+
+}
+
+private static void _LoadRefTables()
+{
+    var elements = _xml.Elements(_ns + "User");
+    foreach (var el in elements)
+    {
+        string elemId = el.Attribute("elemId").Value; string refVal = el.Attribute("user_id").Value;
+        UserRef[elemId] = refVal; UserRefVal[refVal] = elemId;
+    }
+
+    elements = _xml.Elements(_ns + "Group");
+    foreach (var el in elements)
+    {
+        string elemId = el.Attribute("elemId").Value; string refVal = el.Attribute("full_name").Value;
+        GroupRef[elemId] = refVal; GroupRefVal[refVal] = elemId;
+    }
+
+    elements = _xml.Elements(_ns + "UnitOfMeasure");
+    foreach (var el in elements)
+    {
+        string elemId = el.Attribute("elemId").Value; string refVal = el.Attribute("symbol").Value;
+        UnitOfMeasureRef[elemId] = refVal; UnitOfMeasureRefVal[refVal] = elemId;
+    }
+
+    elements = _xml.Elements(_ns + "ImanVolume");
+    foreach (var el in elements)
+    {
+        string elemId = el.Attribute("elemId").Value; string refVal = el.Attribute("volume_name").Value;
+        ImanVolumeRef[elemId] = refVal; ImanVolumeRefVal[refVal] = elemId;
+    }
+
+    elements = _xml.Elements(_ns + "DatasetType");
+    foreach (var el in elements)
+    {
+        string elemId = el.Attribute("elemId").Value; string refVal = el.Attribute("datasettype_name").Value;
+        DatasetTypeRef[elemId] = refVal; DatasetTypeRefVal[refVal] = elemId;
+    }
+
+    elements = _xml.Elements(_ns + "ImanType");
+    foreach (var el in elements)
+    {
+        string elemId = el.Attribute("elemId").Value; string refVal = el.Attribute("type_name").Value;
+        ImanTypeRef[elemId] = refVal; ImanTypeRefVal[refVal] = elemId;
+    }
+
+    elements = _xml.Elements(_ns + "Tool");
+    foreach (var el in elements)
+    {
+        string elemId = el.Attribute("elemId").Value; string refVal = el.Attribute("object_name").Value;
+        ToolRef[elemId] = refVal; ToolRefVal[refVal] = elemId;
+    }
+
+    ReleaseStatusRef = _xml.Elements(_ns + "ReleaseStatus").ToDictionary(x => x.Attribute("puid").Value, x => x);
+}
+
+private static string _GetRef(string attribute, string refVal)
+{
+    string elemId = "";
+
+    if (refTable.ContainsKey(attribute))
+    {
+        var dval = refTable[attribute];
+
+        switch (dval[0])
+        {
+            case "User":
+                UserRefVal.TryGetValue(refVal, out elemId);
+                break;
+            case "Group":
+                GroupRefVal.TryGetValue(refVal, out elemId);
+                break;
+            case "UnitOfMeasure":
+                UnitOfMeasureRefVal.TryGetValue(refVal, out elemId);
+                break;
+            case "ImanVolume":
+                ImanVolumeRefVal.TryGetValue(refVal, out elemId);
+                break;
+            case "DatasetType":
+                DatasetTypeRefVal.TryGetValue(refVal, out elemId);
+                break;
+            case "ImanType":
+                ImanTypeRefVal.TryGetValue(refVal, out elemId);
+                break;
+            case "Tool":
+                ToolRefVal.TryGetValue(refVal, out elemId);
+                break;
+        }
+
+
+        if (elemId == "")
+            return "";
+    }
+
+    return ("#" + elemId);
+}
+
+
+private static string _GetRefVal(string attribute, string elemid)
+{
+    string value = null;
+
+    if (elemid == "") return "";
+
+    string id = elemid.Replace("#", "");
+
+    string RefType = refTable[attribute][0];
+    string RefAttr = refTable[attribute][1];
+
+
+    switch (RefType)
+    {
+        case "User":
+            UserRef.TryGetValue(id, out value);
+            break;
+        case "Group":
+            GroupRef.TryGetValue(id, out value);
+            break;
+        case "UnitOfMeasure":
+            UnitOfMeasureRef.TryGetValue(id, out value);
+            break;
+        case "ImanVolume":
+            ImanVolumeRef.TryGetValue(id, out value);
+            break;
+        case "DatasetType":
+            DatasetTypeRef.TryGetValue(id, out value);
+            break;
+        case "ImanType":
+            ImanTypeRef.TryGetValue(id, out value);
+            break;
+        case "Tool":
+            ToolRef.TryGetValue(id, out value);
+            break;
+    }
+
+
+    return value;
+}
+
+
+private static string _GetRelSts(XAttribute attribute)
+{
+    try
+    {
+        if (attribute == null || attribute.Value == "") return "";
+        XElement el = null;
+        ReleaseStatusRef.TryGetValue(attribute.Value, out el);
+        string statuses = string.Join(",", el.Attribute("name").Value);
+
+        return statuses;
+    }
+    catch { return ""; }
+}
+
+private static string _SetRelSts(XAttribute attribute, string Val)
+{
+    string newPUID = "";
+
+    if (attribute == null || attribute.Value == "")
+    { }
+    else
+    {
+
+        if (Val == "")
+        {
+            return "";
+        }
+
+
+        newPUID = attribute.Value;
+
+        XElement el = null;
+        ReleaseStatusRef.TryGetValue(attribute.Value, out el);
+
+        if (Val == null)
+        {
+            newPUID = "";
+            el.Remove();
+        }
+        else
+            el.SetAttributeValue("name", Val);
 
     }
 
-    private static string _GetRef(string attribute, string refVal){
-            string elemId = "";
+    return newPUID;
+}
 
-                if(refTable.ContainsKey(attribute))
-                {
-                    var dval = refTable[attribute];
-                     var el = _xml.Elements(_ns + dval[0]).Where(x => x.Attribute(dval[1]).Value == refVal).Select(x => x.Attribute("elemId").Value);
-
-                    if (el.Count() == 1)
-                        elemId = el.Single();
-                    else
-                        return "";
-                }
-
-             return ("#" + elemId);
-            }
 
 private static void _UpdateStubs()
 {
     var Stubs = _xml.Elements(_ns + "POM_stub");
     List<XElement> RecordStubs = new List<XElement>();
-    int one2one = 0, PartialMap =0;
+    int one2one = 0, PartialMap = 0;
     foreach (var stub in Stubs)
     {
         string oType = stub.Attribute("object_type").Value;
 
-       
+
 
         //One2One
         if (Classes.OneToOneMaps.ContainsKey(oType))
@@ -209,22 +318,22 @@ private static void _UpdateStubs()
 }
 
 private static void _ReconcileLocalStubs()
-    {
-        var stubs = from stub in _xml.Elements(_ns + "POM_stub")
-                    join chg in _TypeChangeLog on stub.Attribute("object_uid").Value equals chg.Key
-                    select new { Stub = stub, ChangeRecord = chg.Value };
+{
+    var stubs = from stub in _xml.Elements(_ns + "POM_stub")
+                join chg in _TypeChangeLog on stub.Attribute("object_uid").Value equals chg.Key
+                select new { Stub = stub, ChangeRecord = chg.Value };
 
-        foreach (var e in stubs)
-        {
-            e.Stub.SetAttributeValue("object_class", e.ChangeRecord[1]);
-            e.Stub.SetAttributeValue("object_type", e.ChangeRecord[1]);
-        }
+    foreach (var e in stubs)
+    {
+        e.Stub.SetAttributeValue("object_class", e.ChangeRecord[1]);
+        e.Stub.SetAttributeValue("object_type", e.ChangeRecord[1]);
     }
+}
 
 private static void _RecordTypeChange(string puid, string from, string to)
-    {
-            _TypeChangeLog[puid] = new string[2]{from,to};
-    }
+{
+    _TypeChangeLog[puid] = new string[2] { from, to };
+}
 
 private static void _TCPropagateItem(XElement _item, string sItem, string sRev, string sMasterForm, string sMasterFormS, string sMasterRevForm, string sMasterRevFormS, string tItem, string tRevision, string tMasterForm, string tMasterFormS, string tMasterRevForm, string tMasterRevFormS)
 {
@@ -339,54 +448,54 @@ private static void _TCPropagateItemRevision(XElement _rev, string sItem, string
 }
 
 private static void _FastTCPropagateItem(string sItem, string sRev, string sMasterForm, string sMasterFormS, string sMasterRevForm, string sMasterRevFormS, string tItem, string tRevision, string tMasterForm, string tMasterFormS, string tMasterRevForm, string tMasterRevFormS)
+{
+    var items = _xml.Elements(_ns + sItem);
+    foreach (var tc in items)
     {
-        var items = _xml.Elements(_ns + sItem);
-        foreach(var tc in items)
-        {
-            _RecordTypeChange(tc.Attribute("puid").Value, sItem, tItem);
-            tc.SetAttributeValue("object_type", tItem);
-            tc.Name = _ns + tItem;
-        }
-
-        var masterforms = from mf in _xml.Elements(_ns + "Form")
-                          where mf.Attribute("object_type").Value == sMasterForm
-                          select mf;
-        foreach (var tc in masterforms)
-        {
-            _RecordTypeChange(tc.Attribute("puid").Value, sMasterForm, tMasterForm);
-            tc.SetAttributeValue("object_type", tMasterForm);
-        }
-
-        var masterformsS = _xml.Elements(_ns + sMasterFormS);
-        foreach (var tc in masterformsS)
-        {
-            _RecordTypeChange(tc.Attribute("puid").Value, sMasterFormS, tMasterFormS);
-            tc.SetAttributeValue("object_type", tMasterFormS);
-            tc.Name = _ns + tMasterFormS;
-        }
-
-        var revisions = _xml.Elements(_ns + sRev);
-        foreach (var tc in revisions)
-        {
-            _RecordTypeChange(tc.Attribute("puid").Value, sRev, tRevision);
-            tc.SetAttributeValue("object_type", tRevision);
-            tc.Name = _ns + tRevision;
-        }
-
-        var masterrevforms = from mf in _xml.Elements(_ns + "Form")
-                          where mf.Attribute("object_type").Value == sMasterRevForm
-                          select mf;
-        foreach (var tc in masterrevforms)
-        {
-            _RecordTypeChange(tc.Attribute("puid").Value, sMasterRevForm, tMasterRevForm);
-            tc.SetAttributeValue("object_type", tMasterRevForm);
-        }
-
-        var masterrevformsS = _xml.Elements(_ns + sMasterRevFormS);
-        foreach (var tc in masterrevformsS)
-        {
-            _RecordTypeChange(tc.Attribute("puid").Value, sMasterRevFormS, tMasterRevFormS);
-            tc.SetAttributeValue("object_type", tMasterRevFormS);
-            tc.Name = _ns + tMasterRevFormS;
-        }
+        _RecordTypeChange(tc.Attribute("puid").Value, sItem, tItem);
+        tc.SetAttributeValue("object_type", tItem);
+        tc.Name = _ns + tItem;
     }
+
+    var masterforms = from mf in _xml.Elements(_ns + "Form")
+                      where mf.Attribute("object_type").Value == sMasterForm
+                      select mf;
+    foreach (var tc in masterforms)
+    {
+        _RecordTypeChange(tc.Attribute("puid").Value, sMasterForm, tMasterForm);
+        tc.SetAttributeValue("object_type", tMasterForm);
+    }
+
+    var masterformsS = _xml.Elements(_ns + sMasterFormS);
+    foreach (var tc in masterformsS)
+    {
+        _RecordTypeChange(tc.Attribute("puid").Value, sMasterFormS, tMasterFormS);
+        tc.SetAttributeValue("object_type", tMasterFormS);
+        tc.Name = _ns + tMasterFormS;
+    }
+
+    var revisions = _xml.Elements(_ns + sRev);
+    foreach (var tc in revisions)
+    {
+        _RecordTypeChange(tc.Attribute("puid").Value, sRev, tRevision);
+        tc.SetAttributeValue("object_type", tRevision);
+        tc.Name = _ns + tRevision;
+    }
+
+    var masterrevforms = from mf in _xml.Elements(_ns + "Form")
+                         where mf.Attribute("object_type").Value == sMasterRevForm
+                         select mf;
+    foreach (var tc in masterrevforms)
+    {
+        _RecordTypeChange(tc.Attribute("puid").Value, sMasterRevForm, tMasterRevForm);
+        tc.SetAttributeValue("object_type", tMasterRevForm);
+    }
+
+    var masterrevformsS = _xml.Elements(_ns + sMasterRevFormS);
+    foreach (var tc in masterrevformsS)
+    {
+        _RecordTypeChange(tc.Attribute("puid").Value, sMasterRevFormS, tMasterRevFormS);
+        tc.SetAttributeValue("object_type", tMasterRevFormS);
+        tc.Name = _ns + tMasterRevFormS;
+    }
+}
