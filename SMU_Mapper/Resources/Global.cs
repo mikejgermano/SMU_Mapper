@@ -6,6 +6,17 @@ public static class Global
     public static StreamWriter LogFile;
     public static ErrorList _errList = new ErrorList();
 
+    public static Dictionary<string, string[]> refTable = new Dictionary<string, string[]>{
+        {"owning_user",         new string[2]{"User","user_id"}},
+        {"last_mod_user",       new string[2]{"User","user_id"}},
+        {"owning_group",        new string[2]{"Group","name"}},
+        {"uom_tag",             new string[2]{"UnitOfMeasure","symbol"}},
+        {"volume_tag",          new string[2]{"ImanVolume","volume_name"}},
+        {"dataset_type",        new string[2]{"DatasetType","datasettype_name"}},
+        {"relation_type",       new string[2]{"ImanType","type_name"}},
+        {"tool_used",           new string[2]{"Tool","object_name"}}
+        };
+
 
     public static string GetAttrValue(this XElement el, XName name)
     {
@@ -34,7 +45,8 @@ public static class Global
         }
         else
         {
-            el.SetAttributeValue(name, value);
+            if (Global.refTable.ContainsKey("name") && value.ToString() != "")
+                el.SetAttributeValue(name, value);
         }
     }
 

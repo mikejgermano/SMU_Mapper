@@ -129,9 +129,9 @@ private static string _GetRef(string attribute, string refVal)
 {
     string elemId = "";
 
-    if (refTable.ContainsKey(attribute))
+    if (Global.refTable.ContainsKey(attribute))
     {
-        var dval = refTable[attribute];
+        var dval = Global.refTable[attribute];
 
         switch (dval[0])
         {
@@ -158,6 +158,11 @@ private static string _GetRef(string attribute, string refVal)
                 break;
         }
 
+        if (elemId == null)
+        {
+            Global._errList.Add(new ErrorList.ErrorInfo(Global._mapCounter, ErrorCodes.MISSING_REF_OBJECT, "", "", TCTypes.SystemObject, dval[0], refVal));
+            return "";
+        }
 
         if (elemId == "")
             return "";
@@ -175,8 +180,8 @@ private static string _GetRefVal(string attribute, string elemid)
 
     string id = elemid.Replace("#", "");
 
-    string RefType = refTable[attribute][0];
-    string RefAttr = refTable[attribute][1];
+    string RefType = Global.refTable[attribute][0];
+    string RefAttr = Global.refTable[attribute][1];
 
 
     switch (RefType)

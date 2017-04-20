@@ -44,6 +44,11 @@
     [Description("Lookup contains duplicate key")]
     [ErrorType(ErrorTypes.FatalError)]
     DUPLICATE_LOOKUP_KEY,
+
+    ///<summary>Reference object could not be found</summary>
+    [Description("Reference object could not be found")]
+    [ErrorType(ErrorTypes.SevereError)]
+    MISSING_REF_OBJECT,
 }
 public enum TCTypes {Attribute, Mapping, General, WorkspaceObject, Item, ItemMaster, ItemMasterS, ItemRevision, ItemRevisionMaster, ItemRevMasterS, Dataset, BOM, Relation, SystemObject };
 public enum ErrorTypes { SevereError = 0, FatalError = 1, Warning = -1 };

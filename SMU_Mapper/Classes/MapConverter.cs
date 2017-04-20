@@ -509,11 +509,11 @@ namespace SMU_Mapper.Classes
                 result = _RelStsReplace(result, @"@(release_status_list)");
 
                 string patternJoins = @"([a-zA-z0-9_]+)@([a-zA-z0-9_]+)";
-                result = _RefReplace(result, patternRefJoin);
+                result = _RefReplace(result, patternRefJoin,alias);
                 result = Regex.Replace(result, patternJoins, "$1.GetAttrValue(\"" + "$2" + "\")");
 
                 string pattern = @"@([\w]*)";
-                result = _RefReplace(result, patternRef);
+                result = _RefReplace(result, patternRef,"");
                 result = Regex.Replace(result, pattern, alias + ".GetAttrValue(\"" + "$1" + "\")");
 
                 result = result.Replace(".GetAttrValue(\"release_status_list\")", ".Attribute(\"release_status_list\")");
@@ -524,11 +524,17 @@ namespace SMU_Mapper.Classes
                 return val;
         }
 
-        private static string _RefReplace(string input, string pattern)
+        private static string _RefReplace(string input, string pattern,string alias)
         {
             string gRef = "";
 
-            gRef = Regex.Replace(input, pattern, "_GetRefVal(\"" + "$1" + "\"," + "@" + "$1" + ")");
+            if(alias != "")
+            {
+                gRef = Regex.Replace(input, pattern, "_GetRefVal(\"" + "$2" + "\", " + alias + "@" + "$2" + ")");
+            }
+            else
+                gRef = Regex.Replace(input, pattern, "_GetRefVal(\"" + "$1" + "\"," + "@" + "$1" + ")");
+
 
             return gRef;
         }
@@ -849,7 +855,7 @@ namespace SMU_Mapper.Classes
             StringBuilder Code = new StringBuilder();
 
             //Reference Table info
-            string refTbl = ConvertRefTable();
+            string refTbl = "";//ConvertRefTable();
 
             string modelTbl = ConvertModelTable();
 
