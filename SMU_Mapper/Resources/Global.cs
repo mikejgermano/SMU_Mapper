@@ -1,6 +1,7 @@
 public static class Global
 {
     public static int _mapCounter = 0;
+    private static int _next_elemID = 0;
 
     public static bool _DisableWarnings = true;
     public static StreamWriter LogFile;
@@ -17,6 +18,27 @@ public static class Global
         {"tool_used",           new string[2]{"Tool","object_name"}}
         };
 
+    public static void initElemID(XElement xml)
+    {
+        if (_next_elemID != 0) return;
+
+        var els = from el in xml.Elements().Where(x => x.Attribute("elemId") != null)
+                  select int.Parse(el.Attribute("elemId").Value.Remove(0, 2));
+
+        int last = els.OrderByDescending(x => x).First();
+        _next_elemID = last;
+    }
+
+    public static string _getNextElemID()
+    {
+        if (_next_elemID != 0)
+        {
+            _next_elemID++;
+            return "id" + (_next_elemID).ToString();
+        }
+
+        return null;
+    }
 
     public static string GetAttrValue(this XElement el, XName name)
     {
@@ -45,7 +67,7 @@ public static class Global
         }
         else
         {
-            if (Global.refTable.ContainsKey("name") && value.ToString() != "")
+            //if (Global.refTable.ContainsKey("name") && value.ToString() != "")
                 el.SetAttributeValue(name, value);
         }
     }

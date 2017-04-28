@@ -66,6 +66,22 @@ public partial class Header
         set { this.modelField = value; }
     }
 
+    private HeaderMapRefObject[] mapRefObjectField;
+    /// <remarks/>
+    [System.Xml.Serialization.XmlElementAttribute("mapRefObject")]
+    public HeaderMapRefObject[] mapRefObject
+    {
+        get
+        {
+            return this.mapRefObjectField;
+        }
+        set
+        {
+            this.mapRefObjectField = value;
+        }
+    }
+
+
     private HeaderVariable[] varField;
     /// <remarks/>
     [System.Xml.Serialization.XmlElementAttribute("variable")]
@@ -323,6 +339,99 @@ public partial class HeaderVariable
 [System.Diagnostics.DebuggerStepThroughAttribute()]
 [System.ComponentModel.DesignerCategoryAttribute("code")]
 [System.Xml.Serialization.XmlTypeAttribute(AnonymousType = true)]
+public partial class HeaderMapRefObject
+{
+    private SMU_Mapper.Classes.Extensions.refObjects typeField;
+    private string lookupField;
+
+
+    private MapRefObjectValue[] mapRefObjectValueField;
+    /// <remarks/>
+    [System.Xml.Serialization.XmlElementAttribute("value")]
+    public MapRefObjectValue[] mapRefObjectValue
+    {
+        get
+        {
+            return this.mapRefObjectValueField;
+        }
+        set
+        {
+            this.mapRefObjectValueField = value;
+        }
+    }
+
+    [XmlAttribute("type")]
+    public SMU_Mapper.Classes.Extensions.refObjects type
+    {
+        get
+        {
+            return this.typeField;
+        }
+        set
+        {
+            this.typeField = value;
+        }
+    }
+
+    [XmlAttribute("lookup")]
+    public string lookup
+    {
+        get
+        {
+            return this.lookupField;
+        }
+        set
+        {
+            this.lookupField = value;
+        }
+    }
+}
+
+/// <remarks/>
+[System.CodeDom.Compiler.GeneratedCodeAttribute("xsd", "4.6.1055.0")]
+[System.SerializableAttribute()]
+[System.Diagnostics.DebuggerStepThroughAttribute()]
+[System.ComponentModel.DesignerCategoryAttribute("code")]
+[System.Xml.Serialization.XmlTypeAttribute(AnonymousType = true)]
+public partial class MapRefObjectValue
+{
+    private string aField;
+    private string bField;
+
+    [XmlAttribute("a")]
+    public string a
+    {
+        get
+        {
+            return this.aField;
+        }
+        set
+        {
+            this.aField = value;
+        }
+    }
+
+    [XmlAttribute("b")]
+    public string b
+    {
+        get
+        {
+            return this.bField;
+        }
+        set
+        {
+            this.bField = value;
+        }
+    }
+}
+
+
+/// <remarks/>
+[System.CodeDom.Compiler.GeneratedCodeAttribute("xsd", "4.6.1055.0")]
+[System.SerializableAttribute()]
+[System.Diagnostics.DebuggerStepThroughAttribute()]
+[System.ComponentModel.DesignerCategoryAttribute("code")]
+[System.Xml.Serialization.XmlTypeAttribute(AnonymousType = true)]
 public partial class HeaderFunction
 {
     [XmlText]
@@ -330,6 +439,7 @@ public partial class HeaderFunction
 
 
 }
+
 
 /// <remarks/>
 [System.CodeDom.Compiler.GeneratedCodeAttribute("xsd", "4.6.1055.0")]

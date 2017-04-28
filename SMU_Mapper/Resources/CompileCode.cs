@@ -1,3 +1,17 @@
+private static void RemoveRoles()
+{
+    var Roles = _xml.Elements(_ns + "Role").ToArray();
+    foreach (var role in Roles)
+    {
+        role.Remove();
+    }
+    var Groups = _xml.Elements(_ns + "Group");
+    foreach (var group in Groups)
+    {
+        group.SetAttrValue("list_of_role", null);
+    }
+}
+
 private static Dictionary<string, string> LoadLookup(string path)
 {
     Dictionary<string, string> LoadLookup_d = new Dictionary<string, string>();
@@ -55,7 +69,7 @@ private static string Lookup(string name, string key)
         d1.TryGetValue(key, out value);
     }
 
-    return value ?? key;
+    return value;
 
 }
 
@@ -218,7 +232,7 @@ private static string _GetRelSts(XAttribute attribute)
 {
     try
     {
-        if (attribute == null || attribute.Value == "") return "";
+        if (attribute == null || attribute.Value == "") return null;
         XElement el = null;
         ReleaseStatusRef.TryGetValue(attribute.Value, out el);
         string statuses = string.Join(",", el.Attribute("name").Value);
@@ -261,6 +275,40 @@ private static string _SetRelSts(XAttribute attribute, string Val)
     return newPUID;
 }
 
+
+private static void _RemoveRefObject(XElement el, params string[] attributes)
+{
+    string uid = "#" + el.Attribute("elemId").Value;
+
+
+    foreach (var attr in attributes)
+    {
+        var query = _xml.Elements().Where(x => x.Attribute(attr) != null && x.Attribute(attr).Value == uid);
+
+        foreach (var element in query)
+        {
+            element.SetAttributeValue(attr, null);
+        }
+    }
+
+    el.Remove();
+
+}
+
+private static void _RemoveRelStatus(XElement el)
+{
+    string uid = el.Attribute("puid").Value;
+
+
+    var query = _xml.Elements().Where(x => x.Attribute("release_status_list") != null && x.Attribute("release_status_list").Value == uid);
+
+    foreach (var element in query)
+    {
+        element.SetAttributeValue("release_status_list", null);
+    }
+
+    el.Remove();
+}
 
 private static void _UpdateStubs()
 {

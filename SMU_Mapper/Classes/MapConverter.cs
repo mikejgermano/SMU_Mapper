@@ -13,12 +13,31 @@ namespace SMU_Mapper.Classes
 
     public static class Extensions
     {
-
-
         public static string xmlFile = "_xml";
         public static string queryName = "_query";
         public static string AttrChkQueryName = "_AttrQuery";
+        public static string wildcard = "*";
+        public static string wildcard_replace = "_wildcard";
+
         public static HeaderModel model;
+
+
+        public enum refObjects
+        { DatasetType, Group, ImanType, ImanVolume, ReleaseStatus, Tool, UnitOfMeasure, User };
+
+        public static Dictionary<refObjects, string> refObjectTable = new Dictionary<refObjects, string>
+        {
+            { refObjects.DatasetType,"datasettype_name" },
+            { refObjects.Group,"full_name" },
+            { refObjects.ImanType,"type_name" },
+            { refObjects.ImanVolume,"volume_name" },
+            { refObjects.ReleaseStatus,"name" },
+            { refObjects.Tool,"object_name" },
+            { refObjects.UnitOfMeasure,"symbol" },
+            { refObjects.User,"user_id" }
+        };
+
+
 
         public static Dictionary<string, string[]> refTable = new Dictionary<string, string[]>{
         {"owning_user",         new string[2]{"User","user_id"}},
@@ -36,8 +55,17 @@ namespace SMU_Mapper.Classes
         public static StringBuilder Convert(this Map map, int i)
         {
             StringBuilder MapCode = new StringBuilder();
+            bool wildcard_used = false;
 
             string[] _DontChangeName = new string[] { "Dataset", "Form" };
+
+            //check for wildcard
+            if (map.a == wildcard || map.b == wildcard)
+            {
+                wildcard_used = true;
+                map.a = wildcard_replace;
+                map.b = wildcard_replace;
+            }
 
             //Change other TC Class types
             string tcTypeS = model.getTcType(map.a);
@@ -56,31 +84,36 @@ namespace SMU_Mapper.Classes
                 mClassT = model.getTcModel(map.b);
             }
 
+
+
             //if ((map.mapclass == "yes" && map.srccheck != null) || (mClassS == null || mClassT == null || map.mapclass == "no"))
             //{
-                string query = "";
-                //Query
+            string query = "";
+            //Query
+            if (wildcard_used)
+                query = "{0} = from {3} in _xml.Elements() {4} {2} select {3};";
+            else
                 query = "{0} = from {3} in _xml.Elements(_ns + \"{1}\") {4} {2} select {3};";
-                //Joins
-                string joins = "";
-                if (map.srcjoin != null)
-                    joins = ConvertJoin(map.a, map.srcjoin);
+            //Joins
+            string joins = "";
+            if (map.srcjoin != null)
+                joins = ConvertJoin(map.a, map.srcjoin);
 
-                //Where
-                string where = "";
-                if (map.srccheck != null)
-                {
-                    string ifs = map.srccheck.@if;
+            //Where
+            string where = "";
+            if (map.srccheck != null)
+            {
+                string ifs = map.srccheck.@if;
 
-                    //build Where
-                    where = ConvertIf(map.a, map.srccheck);
+                //build Where
+                where = ConvertIf(map.a, map.srccheck);
 
-                }
+            }
 
 
-                string queryBuild = String.Format(query, queryName, map.a, where, map.a, joins);
+            string queryBuild = String.Format(query, queryName, map.a, where, map.a, joins);
 
-                MapCode.AppendLine(queryBuild);
+            MapCode.AppendLine(queryBuild);
 
             //Errorchecking Empty Query
             MapCode.AppendFormat("if (!_query.Any()) {{ Global._errList.Add(new ErrorList.ErrorInfo(Global._mapCounter, ErrorCodes.MAP_QUERY_EMPTY, \"\", \"\", TCTypes.Mapping, \"{0}\")); }}", map.a);
@@ -88,69 +121,69 @@ namespace SMU_Mapper.Classes
             //Start the itteration
             MapCode.AppendFormat("foreach(var {0} in {1}){{", map.b, Extensions.queryName);
 
-                //Map-Class Name change
+            //Map-Class Name change
 
-                if (map.a != map.b)
+            if (map.a != map.b && wildcard_used == false)
+            {
+                if (_DontChangeName.Contains(map.a))
+                    MapCode.AppendFormat(" {1}.SetAttrValue(\"object_type\",\"{2}\");", Extensions.queryName, map.b, map.b);
+                else
                 {
-                    if (_DontChangeName.Contains(map.a))
-                        MapCode.AppendFormat(" {1}.SetAttrValue(\"object_type\",\"{2}\");", Extensions.queryName, map.b, map.b);
-                    else
+                    //MapCode.AppendFormat(" {1}.Name = _ns + \"{1}\";{1}.SetAttrValue(\"object_type\",\"{2}\");", Extensions.queryName, map.b, map.b);
+                    switch (tcTypeT + tcTypeS + "|" + map.mapclass)
                     {
-                        //MapCode.AppendFormat(" {1}.Name = _ns + \"{1}\";{1}.SetAttrValue(\"object_type\",\"{2}\");", Extensions.queryName, map.b, map.b);
-                        switch (tcTypeT + tcTypeS + "|" + map.mapclass)
-                        {
-                            case "itemitem|yes":
-                                MapCode.AppendFormat(" _TCPropagateItem({0},\"{1}\",\"{2}\",\"{3}\",\"{4}\",\"{5}\",\"{6}\",\"{7}\",\"{8}\",\"{9}\",\"{10}\",\"{11}\",\"{12}\");", map.b, mClassS.item, mClassS.itemrevision, mClassS.masterform, mClassS.masterformS, mClassS.masterformRev, mClassS.masterformRevS, mClassT.item, mClassT.itemrevision, mClassT.masterform, mClassT.masterformS, mClassT.masterformRev, mClassT.masterformRevS);
-                                break;
-                            case "itemrevitemrev|yes":
-                                MapCode.AppendFormat(" if({13}.Name.LocalName != \"{13}\")_TCPropagateItemRevision({0},\"{1}\",\"{2}\",\"{3}\",\"{4}\",\"{5}\",\"{6}\",\"{7}\",\"{8}\",\"{9}\",\"{10}\",\"{11}\",\"{12}\");", map.b, mClassS.item, mClassS.itemrevision, mClassS.masterform, mClassS.masterformS, mClassS.masterformRev, mClassS.masterformRevS, mClassT.item, mClassT.itemrevision, mClassT.masterform, mClassT.masterformS, mClassT.masterformRev, mClassT.masterformRevS, map.b);
-                                break;
-                            default:
-                                MapCode.AppendFormat(" {1}.Name = _ns + \"{1}\";{1}.SetAttrValue(\"object_type\",\"{2}\");", Extensions.queryName, map.b, map.b);
-                                break;
-                        }
+                        case "itemitem|yes":
+                            MapCode.AppendFormat(" _TCPropagateItem({0},\"{1}\",\"{2}\",\"{3}\",\"{4}\",\"{5}\",\"{6}\",\"{7}\",\"{8}\",\"{9}\",\"{10}\",\"{11}\",\"{12}\");", map.b, mClassS.item, mClassS.itemrevision, mClassS.masterform, mClassS.masterformS, mClassS.masterformRev, mClassS.masterformRevS, mClassT.item, mClassT.itemrevision, mClassT.masterform, mClassT.masterformS, mClassT.masterformRev, mClassT.masterformRevS);
+                            break;
+                        case "itemrevitemrev|yes":
+                            MapCode.AppendFormat(" if({13}.Name.LocalName != \"{13}\")_TCPropagateItemRevision({0},\"{1}\",\"{2}\",\"{3}\",\"{4}\",\"{5}\",\"{6}\",\"{7}\",\"{8}\",\"{9}\",\"{10}\",\"{11}\",\"{12}\");", map.b, mClassS.item, mClassS.itemrevision, mClassS.masterform, mClassS.masterformS, mClassS.masterformRev, mClassS.masterformRevS, mClassT.item, mClassT.itemrevision, mClassT.masterform, mClassT.masterformS, mClassT.masterformRev, mClassT.masterformRevS, map.b);
+                            break;
+                        default:
+                            MapCode.AppendFormat(" {1}.Name = _ns + \"{1}\";{1}.SetAttrValue(\"object_type\",\"{2}\");", Extensions.queryName, map.b, map.b);
+                            break;
+                    }
 
-                        MapCode.AppendFormat(" _RecordTypeChange({0}.Attribute(\"puid\").Value,\"{1}\",\"{2}\");", map.b, map.a, map.b);
+                    MapCode.AppendFormat(" _RecordTypeChange({0}.Attribute(\"puid\").Value,\"{1}\",\"{2}\");", map.b, map.a, map.b);
+                }
+            }
+
+            //Iteration
+            StringBuilder Tasks = new StringBuilder();
+
+            if (map.Items != null)
+            {
+                foreach (var task in map.Items)
+                {
+                    switch (task.GetType().Name)
+                    {
+                        case "MapAttr":
+                            {
+                                string q = ConvertMapAttr((MapAttr)task, map.b);
+                                Tasks.AppendLine(q);
+                                break;
+                            }
+                        case "MapAttribute":
+                            {
+                                string q = ConvertMapAttribute((MapAttribute)task, map.b);
+                                Tasks.AppendLine(q);
+
+                                break;
+                            }
+                        case "MapAttrCheck":
+                            {
+                                string q = ConvertMapAttrCheck((MapAttrCheck)task, map.b);
+                                Tasks.AppendLine(q);
+
+                                break;
+                            }
                     }
                 }
-
-                //Iteration
-                StringBuilder Tasks = new StringBuilder();
-
-                if (map.Items != null)
-                {
-                    foreach (var task in map.Items)
-                    {
-                        switch (task.GetType().Name)
-                        {
-                            case "MapAttr":
-                                {
-                                    string q = ConvertMapAttr((MapAttr)task, map.b);
-                                    Tasks.AppendLine(q);
-                                    break;
-                                }
-                            case "MapAttribute":
-                                {
-                                    string q = ConvertMapAttribute((MapAttribute)task, map.b);
-                                    Tasks.AppendLine(q);
-
-                                    break;
-                                }
-                            case "MapAttrCheck":
-                                {
-                                    string q = ConvertMapAttrCheck((MapAttrCheck)task, map.b);
-                                    Tasks.AppendLine(q);
-
-                                    break;
-                                }
-                        }
-                    }
-                }
+            }
 
 
 
-                MapCode.AppendLine(Tasks.ToString());
-                MapCode.AppendLine("}");
+            MapCode.AppendLine(Tasks.ToString());
+            MapCode.AppendLine("}");
             //}
 
             /*Fast Propagate
@@ -176,6 +209,84 @@ namespace SMU_Mapper.Classes
              catch(System.Exception ex)
              {{
                  throw new System.Exception(""Error in Script :"" + {1} + ""\nError: "" + ex.Message);}}", map.data, i.ToString());
+
+            return MapCode;
+        }
+
+        public static StringBuilder Convert(this HeaderMapRefObject mapRef)
+        {
+            StringBuilder MapCode = new StringBuilder();
+
+            refObjects type = mapRef.type;
+            string attributeRef = refObjectTable[type];
+            var attrRefVal = String.Join(",", refTable.Where(x => x.Value[0] == type.ToString()).Select(x => "\"" + x.Key + "\"").ToArray());
+
+
+            string lookup = mapRef.lookup;
+            MapRefObjectValue[] values = mapRef.mapRefObjectValue;
+
+            string valueCode = "";
+
+            if (values != null)
+            {
+                valueCode = "Dictionary<string, string> valLookup = new Dictionary<string, string>(){";
+                var arLookup = values.Select(x => "{\"" + x.a + "\",\"" + x.b + "\"}");
+                string list = string.Join(",", arLookup);
+                valueCode += list;
+                valueCode += "};";
+            }
+
+            string removeCode = "";
+            if (type == refObjects.ReleaseStatus)
+                removeCode = "_RemoveRelStatus(m);";
+            else
+                removeCode = "_RemoveRefObject(m," + attrRefVal + ");";
+
+            if (lookup != null)
+            {
+                MapCode.AppendFormat(@"try
+             {{
+                 _query = _xml.Elements(_ns + ""{0}""); 
+
+                 foreach(var m in _query)
+                   {{
+                        string refVal = Lookup(""{2}"",m.GetAttrValue(""{1}""));
+                        
+                        if(refVal == """")
+                        {3}
+                        else if (refVal != null)
+                        m.SetAttrValue(""{1}"",refVal);
+                   }}
+             }}
+             catch(System.Exception ex)
+             {{
+                 throw new System.Exception(ex.Message);}}", type.ToString(), attributeRef, lookup, removeCode);
+            }
+            else if (lookup == null && values != null)
+            {
+                MapCode.AppendFormat(@"try
+             {{
+                 _query = _xml.Elements(_ns + ""{0}""); 
+
+                 {2}
+
+                 foreach(var m in _query)
+                   {{
+                        string refVal = null;
+                        valLookup.TryGetValue(m.GetAttrValue(""{1}""), out refVal);
+
+                        if(refVal == """")
+                        {3}
+                        else if (refVal != null)
+                        m.SetAttrValue(""{1}"",refVal);
+                   }}
+             }}
+             catch(System.Exception ex)
+             {{
+                 throw new System.Exception(ex.Message);}}", type.ToString(), attributeRef, valueCode, removeCode);
+            }
+
+
 
             return MapCode;
         }
@@ -211,12 +322,12 @@ namespace SMU_Mapper.Classes
 
             var maps = m.Items.Where(x => x.GetType() == typeof(Map)).Cast<Map>().Where(x => x.srccheck != null && x.a != x.b).Select(x => x.a).Distinct().ToArray();
 
-            foreach(var map in maps)
+            foreach (var map in maps)
             {
                 RecordedMapsList.Add(map);
                 var classes = getFullModel(map, m);
-                if(classes != null)
-                RecordedMapsList.AddRange(classes);
+                if (classes != null)
+                    RecordedMapsList.AddRange(classes);
             }
 
             return RecordedMapsList.Distinct().ToArray();
@@ -239,14 +350,14 @@ namespace SMU_Mapper.Classes
             return RecordedMapsList.Distinct().ToArray();
         }
 
-        public static Dictionary<string,string> getOneToOneMaps(Maps m,string[] MapChanges)
+        public static Dictionary<string, string> getOneToOneMaps(Maps m, string[] MapChanges)
         {
             Dictionary<string, string> MapList = new Dictionary<string, string>();
 
-            var maps = m.Items.Where(x => x.GetType() == typeof(Map)).Cast<Map>().Where(x => x.srccheck == null && x.a != x.b && !MapChanges.Contains(x.a)).Select(x => new {From = getFullModel(x.a,m), To = getFullModel(x.b, m) });
+            var maps = m.Items.Where(x => x.GetType() == typeof(Map)).Cast<Map>().Where(x => x.srccheck == null && x.a != x.b && !MapChanges.Contains(x.a)).Select(x => new { From = getFullModel(x.a, m), To = getFullModel(x.b, m) });
             List<string[]> mapSrc = new List<string[]>();
             List<string[]> mapTgt = new List<string[]>();
-            
+
 
             List<string> invalid_maps = new List<string>();
             string invalidMapRegex = "Cannot map {0} to {1} - {2} is not defined in model";
@@ -255,11 +366,11 @@ namespace SMU_Mapper.Classes
                 var src = getFullModel(map.a, m);
                 var trgt = getFullModel(map.b, m);
 
-                if(src == null && trgt != null)
+                if (src == null && trgt != null)
                     invalid_maps.Add(String.Format(invalidMapRegex, map.a, map.b, map.a));
                 else if (trgt == null && src != null)
                     invalid_maps.Add(String.Format(invalidMapRegex, map.a, map.b, map.b));
-                else if( src != null && trgt != null)
+                else if (src != null && trgt != null)
                 {
                     mapSrc.Add(src);
                     mapTgt.Add(trgt);
@@ -275,7 +386,7 @@ namespace SMU_Mapper.Classes
             var mapSrcArr = mapSrc.SelectMany(x => x).ToArray();
             var mapTgtArr = mapTgt.SelectMany(x => x).ToArray();
 
-            for(int i =0;i< mapSrcArr.Count(); i++)
+            for (int i = 0; i < mapSrcArr.Count(); i++)
             {
                 MapList[mapSrcArr[i]] = mapTgtArr[i];
             }
@@ -288,7 +399,7 @@ namespace SMU_Mapper.Classes
             var classes = m.header.model.classes;
             if (classes == null) return null;
 
-            var model = classes.Where(x => x.item == tclass || x.itemrevision == tclass).Select(x=>new string[] {x.item,x.itemrevision,x.masterform,x.masterformS,x.masterformRev,x.masterformRevS}).FirstOrDefault();
+            var model = classes.Where(x => x.item == tclass || x.itemrevision == tclass).Select(x => new string[] { x.item, x.itemrevision, x.masterform, x.masterformS, x.masterformRev, x.masterformRevS }).FirstOrDefault();
 
             return model;
         }
@@ -509,11 +620,11 @@ namespace SMU_Mapper.Classes
                 result = _RelStsReplace(result, @"@(release_status_list)");
 
                 string patternJoins = @"([a-zA-z0-9_]+)@([a-zA-z0-9_]+)";
-                result = _RefReplace(result, patternRefJoin,alias);
+                result = _RefReplace(result, patternRefJoin, alias);
                 result = Regex.Replace(result, patternJoins, "$1.GetAttrValue(\"" + "$2" + "\")");
 
                 string pattern = @"@([\w]*)";
-                result = _RefReplace(result, patternRef,"");
+                result = _RefReplace(result, patternRef, "");
                 result = Regex.Replace(result, pattern, alias + ".GetAttrValue(\"" + "$1" + "\")");
 
                 result = result.Replace(".GetAttrValue(\"release_status_list\")", ".Attribute(\"release_status_list\")");
@@ -524,11 +635,11 @@ namespace SMU_Mapper.Classes
                 return val;
         }
 
-        private static string _RefReplace(string input, string pattern,string alias)
+        private static string _RefReplace(string input, string pattern, string alias)
         {
             string gRef = "";
 
-            if(alias != "")
+            if (alias != "")
             {
                 gRef = Regex.Replace(input, pattern, "_GetRefVal(\"" + "$2" + "\", " + alias + "@" + "$2" + ")");
             }
@@ -651,18 +762,27 @@ namespace SMU_Mapper.Classes
 
             //Mappings that don't match the model list
             var srcMdlMiss = (from m in maps.Items.Where(x => x.GetType() == typeof(Map)).Cast<Map>()
-                             where model.getTcType(m.b) == ""
-                             select m.b).Distinct().ToList();
+                              where model.getTcType(m.b) == ""
+                              select m.b).Distinct().ToList();
 
             if (srcMdlMiss.Count() > 0) { Console.WriteLine("--Source Mappings that don't match model--"); srcMdlMiss.ForEach(Console.WriteLine); }
 
             var trgtMdlMiss = (from m in maps.Items.Where(x => x.GetType() == typeof(Map)).Cast<Map>()
-                              where model.getTcType(m.a) == ""
-                              select m.a).Distinct().ToList();
-           
+                               where model.getTcType(m.a) == ""
+                               select m.a).Distinct().ToList();
+
             if (trgtMdlMiss.Count() > 0) { Console.WriteLine("--Target Mappings that don't match model--"); trgtMdlMiss.ForEach(Console.WriteLine); }
             //End
 
+            //Map Reference Objects
+            foreach (HeaderMapRefObject m in maps.header.mapRefObject)
+            {
+                MapCode.AppendLine(m.Convert().ToString());
+            }
+
+            MapCode.AppendLine("_LoadRefTables();");
+
+            //convert Map
             TotalMapCount = maps.Items.Count();
             int i = 1;
             foreach (object m in maps.Items)
@@ -673,7 +793,7 @@ namespace SMU_Mapper.Classes
                     MapCode.AppendLine("Global._mapCounter = " + i.ToString() + ";");
                     MapCode.AppendLine(((Map)m).Convert(i).ToString());
 
-                    
+
                     i++;
                 }
                 else//Scripts
@@ -749,11 +869,11 @@ namespace SMU_Mapper.Classes
             sb.Append("};");
 
             var last2 = MapChanges.LastOrDefault();
-                StringBuilder sb2 = new StringBuilder("\npublic static string[] recordedClasses = new string[] {");
+            StringBuilder sb2 = new StringBuilder("\npublic static string[] recordedClasses = new string[] {");
 
             foreach (var m in MapChanges)
             {
-                string s = String.Format("\"{0}\"",m);
+                string s = String.Format("\"{0}\"", m);
 
                 if (m.Equals(last2))
                 {
@@ -766,14 +886,14 @@ namespace SMU_Mapper.Classes
                     sb2.AppendLine(s);
                 }
             }
-            
+
             sb2.AppendLine("};");
-           
+
             sb2.Append("public static Dictionary<string,byte> recordedToClasses = new Dictionary<string,byte> {");
 
-            for(int i = 0; i < ToMapChanges.Count(); i++)
+            for (int i = 0; i < ToMapChanges.Count(); i++)
             {
-                string s = String.Format("{{\"{0}\",{1}}}", ToMapChanges[i],i);
+                string s = String.Format("{{\"{0}\",{1}}}", ToMapChanges[i], i);
 
                 if (i + 1 == ToMapChanges.Count())
                 {
@@ -791,9 +911,9 @@ namespace SMU_Mapper.Classes
 
             sb2.Append("public static Dictionary<string,string> OneToOneMaps = new Dictionary<string,string> {");
             var last3 = One2OneMaps.LastOrDefault();
-            foreach(var kv in One2OneMaps)
+            foreach (var kv in One2OneMaps)
             {
-                string s = String.Format("{{\"{0}\",\"{1}\"}}", kv.Key,kv.Value);
+                string s = String.Format("{{\"{0}\",\"{1}\"}}", kv.Key, kv.Value);
 
                 if (kv.Equals(last3))
                 {
@@ -841,8 +961,8 @@ namespace SMU_Mapper.Classes
             string CreateAccesDatabase = Properties.Resources.CreateAccesDatabase;
             string ClassCode = Properties.Resources.Classes;
             string ErrorInfoCode = Properties.Resources.ErrorInfo;
-            string StringExtensions = Properties.Resources.StringExtensions; 
-            
+            string StringExtensions = Properties.Resources.StringExtensions;
+
             var csc = new CSharpCodeProvider(new Dictionary<string, string>() { { "CompilerVersion", "v4.0" }, { "Platform", "x64" } });
             var parameters = new CompilerParameters(new[] { "System.dll", "mscorlib.dll", "System.Core.dll", "System.Xml.dll", "System.Xml.Linq.dll", "System.Data.dll" }, outFile, false);
             parameters.ReferencedAssemblies.Add(@"System.Data.SqlServerCe.dll");
@@ -942,7 +1062,7 @@ namespace SMU_Mapper.Classes
                     IEnumerable<XElement> {1} =  Enumerable.Empty<XElement>();
                     IEnumerable<XElement> {4} =  Enumerable.Empty<XElement>();
 
-                    _LoadRefTables();
+                    
 
                     string _IMAN_master_form = _GetRef(""relation_type"", ""IMAN_master_form"");
 
@@ -955,6 +1075,9 @@ namespace SMU_Mapper.Classes
 
                      Classes._ReadXML();
                     (""Caching Complete"").Print();
+
+                    Global.initElemID(_xml);
+                    RemoveRoles();
 
                     {2}
 
@@ -990,7 +1113,7 @@ namespace SMU_Mapper.Classes
                 ErrorInfoCode,                  //10   
                 GlobalCode,                     //11
                 logRegex                        //12    
-                );                   
+                );
 
 
 

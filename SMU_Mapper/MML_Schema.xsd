@@ -85,6 +85,7 @@
                       </xs:simpleType>
                     </xs:attribute>
                   </xs:complexType>
+                 
                 </xs:element>
                 <xs:element name="variable">
                   <xs:annotation>
@@ -109,9 +110,64 @@
                   </xs:complexType>
                 </xs:element>
                 <xs:element name="function" type="xs:string" />
+                <xs:element name="mapRefObject">
+                  <xs:complexType>
+                    <xs:sequence>
+                      <xs:element minOccurs="0" maxOccurs="unbounded"  name="value" >
+                        <xs:complexType>
+                          <xs:attribute name="a" use="required" >
+                            <xs:simpleType>
+                              <xs:restriction base="xs:string">
+                                <xs:minLength value="1"/>
+                                <xs:pattern value="[a-zA-Z0-9_]+"/>
+                              </xs:restriction>
+                            </xs:simpleType>
+                          </xs:attribute>
+                          <xs:attribute name="b" use="required" >
+                            <xs:simpleType>
+                              <xs:restriction base="xs:string">
+                                <xs:minLength value="1"/>
+                                <xs:pattern value="[a-zA-Z0-9_]+"/>
+                              </xs:restriction>
+                            </xs:simpleType>
+                          </xs:attribute>
+                        </xs:complexType>
+                      </xs:element>
+                    </xs:sequence>
+                    <xs:attribute name="type" use="required" >
+                      <xs:simpleType>
+                        <xs:restriction base="xs:string">
+                          <xs:enumeration value="DatasetType"/>
+                          <xs:enumeration value="Group"/>
+                          <xs:enumeration value="ImanType"/>
+                          <xs:enumeration value="ImanVolume"/>
+                          <xs:enumeration value="ReleaseStatus"/>
+                          <xs:enumeration value="Tool"/>
+                          <xs:enumeration value="UnitOfMeasure"/>
+                          <xs:enumeration value="User"/>
+                        </xs:restriction>
+                      </xs:simpleType>
+                    </xs:attribute>
+                    <xs:attribute name="lookup" use="optional" >
+                      <xs:simpleType>
+                        <xs:restriction base="xs:string">
+                          <xs:minLength value="1"/>
+                        </xs:restriction>
+                      </xs:simpleType>
+                    </xs:attribute>
+                  </xs:complexType>
+                </xs:element>
               </xs:choice>
             </xs:sequence>
           </xs:complexType>
+          <xs:key name="LookupKey">
+            <xs:selector xpath="lookup"/>
+            <xs:field xpath="@name"/>
+          </xs:key>
+          <xs:keyref name="myIdref" refer="LookupKey">
+            <xs:selector xpath="mapRefObject"/>
+            <xs:field xpath="@lookup"/>
+          </xs:keyref>
           <xs:unique name="oneVaribleName">
             <xs:selector xpath="variable"/>
             <xs:field xpath="@name"/>
@@ -119,6 +175,18 @@
           <xs:unique name="oneLookupName">
             <xs:selector xpath="lookup"/>
             <xs:field xpath="@name"/>
+          </xs:unique>
+          <xs:unique name="oneRefObjectName">
+            <xs:selector xpath="mapRefObject"/>
+            <xs:field xpath="@type"/>
+          </xs:unique>
+          <xs:unique name="oneRefObjectLookup">
+            <xs:selector xpath="mapRefObject"/>
+            <xs:field xpath="@lookup"/>
+          </xs:unique>
+          <xs:unique name="oneRefObjectValueLookup">
+            <xs:selector xpath="mapRefObject/value"/>
+            <xs:field xpath="@a"/>
           </xs:unique>
         </xs:element>
         <xs:choice maxOccurs="unbounded">
@@ -268,7 +336,7 @@
                 <xs:simpleType>
                   <xs:restriction base="xs:string">
                     <xs:minLength value="1"/>
-                    <xs:pattern value="[a-zA-Z0-9_]+"/>
+                    <xs:pattern value="^(?!User|Group$|Volume|ReleaseStatus|Tool|DatasetType|UnitOfMeasure|ImanType)[a-zA-Z0-9_]+$"/>
                   </xs:restriction>
                 </xs:simpleType>
               </xs:attribute>
@@ -276,7 +344,7 @@
                 <xs:simpleType>
                   <xs:restriction base="xs:string">
                     <xs:minLength value="1"/>
-                    <xs:pattern value="[a-zA-Z0-9_]+"/>
+                    <xs:pattern value="^(?!User|Group$|Volume|ReleaseStatus|Tool|DatasetType|UnitOfMeasure|ImanType)[a-zA-Z0-9_]+$"/>
                   </xs:restriction>
                 </xs:simpleType>
               </xs:attribute>
@@ -302,5 +370,6 @@
         </xs:choice>
       </xs:sequence>
     </xs:complexType>
+  
   </xs:element>
 </xs:schema>
