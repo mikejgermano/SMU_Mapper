@@ -165,7 +165,7 @@ public partial class HeaderModel
 [System.Xml.Serialization.XmlTypeAttribute(AnonymousType = true)]
 public partial class ModelClass
 {
-    private string itemField, itemrevisionField, masterformField, masterformSField, masterformRevField, masterformRevSField;
+    private string itemField, itemrevisionField, masterformField,masterformRevField;
 
 
     /// <remarks/>

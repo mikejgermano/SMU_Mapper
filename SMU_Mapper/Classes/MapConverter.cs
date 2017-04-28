@@ -760,15 +760,17 @@ namespace SMU_Mapper.Classes
             VariableCode = ConvertVariables(maps.header);
 
 
+            string[] NoReport = new string[] { "Form","Dataset"};
+
             //Mappings that don't match the model list
             var srcMdlMiss = (from m in maps.Items.Where(x => x.GetType() == typeof(Map)).Cast<Map>()
-                              where model.getTcType(m.b) == ""
+                              where model.getTcType(m.b) == "" && !NoReport.Contains(m.a)
                               select m.b).Distinct().ToList();
 
             if (srcMdlMiss.Count() > 0) { Console.WriteLine("--Source Mappings that don't match model--"); srcMdlMiss.ForEach(Console.WriteLine); }
 
             var trgtMdlMiss = (from m in maps.Items.Where(x => x.GetType() == typeof(Map)).Cast<Map>()
-                               where model.getTcType(m.a) == ""
+                               where model.getTcType(m.a) == "" && !NoReport.Contains(m.b)
                                select m.a).Distinct().ToList();
 
             if (trgtMdlMiss.Count() > 0) { Console.WriteLine("--Target Mappings that don't match model--"); trgtMdlMiss.ForEach(Console.WriteLine); }

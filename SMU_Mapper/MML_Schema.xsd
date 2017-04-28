@@ -126,8 +126,7 @@
                           <xs:attribute name="b" use="required" >
                             <xs:simpleType>
                               <xs:restriction base="xs:string">
-                                <xs:minLength value="1"/>
-                                <xs:pattern value="[a-zA-Z0-9_]+"/>
+                                <xs:pattern value="[a-zA-Z0-9_]*"/>
                               </xs:restriction>
                             </xs:simpleType>
                           </xs:attribute>
