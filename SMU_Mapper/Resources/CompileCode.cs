@@ -416,8 +416,8 @@ private static void _TCPropagateItem(XElement _item, string sItem, string sRev, 
 {
     string sItemClass = sItem;
     string sRevClass = sRev;
-    string tItemClass = sItem;
-    string tRevClass = sRev;
+    string tItemClass = tItem;
+    string tRevClass = tRev;
 
     if (secondaryRule == 1)
     {
@@ -498,8 +498,8 @@ private static void _TCPropagateItemRevision(XElement _rev, string sItem, string
 {
     string sItemClass = sItem;
     string sRevClass = sRev;
-    string tItemClass = sItem;
-    string tRevClass = sRev;
+    string tItemClass = tItem;
+    string tRevClass = tRev;
 
     if (secondaryRule == 1)
     {
