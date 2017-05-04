@@ -26,7 +26,7 @@ namespace SMU_Mapper.Classes
         { DatasetType, Group, ImanType, ImanVolume, ReleaseStatus, Tool, UnitOfMeasure, User };
 
         public enum SecondaryMapRules
-        { None = 0, Left = 1, Right =2, Both=3 };
+        { None = 0, Left = 1, Right = 2, Both = 3 };
 
         public static Dictionary<refObjects, string> refObjectTable = new Dictionary<refObjects, string>
         {
@@ -87,7 +87,7 @@ namespace SMU_Mapper.Classes
                 mClassT = model.getTcModel(map.b);
             }
 
-            SecondaryMapRules sRule = getSecondaryMapRule(mClassS, mClassT); 
+            SecondaryMapRules sRule = getSecondaryMapRule(mClassS, mClassT);
 
             //if ((map.mapclass == "yes" && map.srccheck != null) || (mClassS == null || mClassT == null || map.mapclass == "no"))
             //{
@@ -136,10 +136,10 @@ namespace SMU_Mapper.Classes
                     switch (tcTypeT + tcTypeS + "|" + map.mapclass)
                     {
                         case "itemitem|yes":
-                            MapCode.AppendFormat(" _TCPropagateItem({0},\"{1}\",\"{2}\",\"{3}\",\"{4}\",\"{5}\",\"{6}\",\"{7}\",\"{8}\",\"{9}\",\"{10}\",\"{11}\",\"{12}\",{13});", map.b, mClassS.item, mClassS.itemrevision, mClassS.masterform, mClassS.masterformS, mClassS.masterformRev, mClassS.masterformRevS, mClassT.item, mClassT.itemrevision, mClassT.masterform, mClassT.masterformS, mClassT.masterformRev, mClassT.masterformRevS,(int)sRule);
+                            MapCode.AppendFormat(" _TCPropagateItem({0},\"{1}\",\"{2}\",\"{3}\",\"{4}\",\"{5}\",\"{6}\",\"{7}\",\"{8}\",\"{9}\",\"{10}\",\"{11}\",\"{12}\",{13});", map.b, mClassS.item, mClassS.itemrevision, mClassS.masterform, mClassS.masterformS, mClassS.masterformRev, mClassS.masterformRevS, mClassT.item, mClassT.itemrevision, mClassT.masterform, mClassT.masterformS, mClassT.masterformRev, mClassT.masterformRevS, (int)sRule);
                             break;
                         case "itemrevitemrev|yes":
-                            MapCode.AppendFormat(" if({13}.Name.LocalName != \"{13}\")_TCPropagateItemRevision({0},\"{1}\",\"{2}\",\"{3}\",\"{4}\",\"{5}\",\"{6}\",\"{7}\",\"{8}\",\"{9}\",\"{10}\",\"{11}\",\"{12}\",{14});", map.b, mClassS.item, mClassS.itemrevision, mClassS.masterform, mClassS.masterformS, mClassS.masterformRev, mClassS.masterformRevS, mClassT.item, mClassT.itemrevision, mClassT.masterform, mClassT.masterformS, mClassT.masterformRev, mClassT.masterformRevS, map.b,(int)sRule);
+                            MapCode.AppendFormat(" if({13}.Name.LocalName != \"{13}\")_TCPropagateItemRevision({0},\"{1}\",\"{2}\",\"{3}\",\"{4}\",\"{5}\",\"{6}\",\"{7}\",\"{8}\",\"{9}\",\"{10}\",\"{11}\",\"{12}\",{14});", map.b, mClassS.item, mClassS.itemrevision, mClassS.masterform, mClassS.masterformS, mClassS.masterformRev, mClassS.masterformRevS, mClassT.item, mClassT.itemrevision, mClassT.masterform, mClassT.masterformS, mClassT.masterformRev, mClassT.masterformRevS, map.b, (int)sRule);
                             break;
                         default:
                             MapCode.AppendFormat(" {1}.Name = _ns + \"{1}\";{1}.SetAttrValue(\"object_type\",\"{2}\");", Extensions.queryName, map.b, map.b);
@@ -324,7 +324,7 @@ namespace SMU_Mapper.Classes
             bool lis = false;
             bool ris = false;
 
-            if(a != null)
+            if (a != null)
             {
                 lis = a.isSecondary;
             }
@@ -340,7 +340,12 @@ namespace SMU_Mapper.Classes
             return SecondaryMapRules.None;
         }
 
-        public static string[] getRecordedMaps(Maps m)
+        /// <summary>
+        /// List of "a" Maps that contain src check. Will be recorded in Stub Table.
+        /// </summary>
+        /// <param name="m"></param>
+        /// <returns></returns>
+        public static string[] get_A_RecordedMaps(Maps m)
         {
             List<string> RecordedMapsList = new List<string>();
 
@@ -357,7 +362,12 @@ namespace SMU_Mapper.Classes
             return RecordedMapsList.Distinct().ToArray();
         }
 
-        public static string[] getToRecordedMaps(Maps m)
+        /// <summary>
+        ///  List of "b" Maps that contain src check. Will be recorded in Stub Table.
+        /// </summary>
+        /// <param name="m"></param>
+        /// <returns></returns>
+        public static string[] get_B_RecordedMaps(Maps m)
         {
             List<string> RecordedMapsList = new List<string>();
 
@@ -776,15 +786,15 @@ namespace SMU_Mapper.Classes
         {
             model = maps.header.model;
             Extensions.model = model;
-            MapChanges = Extensions.getRecordedMaps(maps);
-            ToMapChanges = Extensions.getToRecordedMaps(maps);
+            MapChanges = Extensions.get_A_RecordedMaps(maps);
+            ToMapChanges = Extensions.get_B_RecordedMaps(maps);
             One2OneMaps = Extensions.getOneToOneMaps(maps, MapChanges);
             FunctionCode = ConvertFunctions(maps.header);
             LookupCode = ConvertLookups(maps);
             VariableCode = ConvertVariables(maps.header);
 
 
-            string[] NoReport = new string[] { "Form","Dataset"};
+            string[] NoReport = new string[] { "Form", "Dataset" };
 
             //Mappings that don't match the model list
             var srcMdlMiss = (from m in maps.Items.Where(x => x.GetType() == typeof(Map)).Cast<Map>()
@@ -802,11 +812,11 @@ namespace SMU_Mapper.Classes
 
 
             //Map Reference Objects
-            if(maps.header.mapRefObject != null)
-            foreach (HeaderMapRefObject m in maps.header.mapRefObject)
-            {
-                MapCode.AppendLine(m.Convert().ToString());
-            }
+            if (maps.header.mapRefObject != null)
+                foreach (HeaderMapRefObject m in maps.header.mapRefObject)
+                {
+                    MapCode.AppendLine(m.Convert().ToString());
+                }
 
             //Map, Load Lookups, then update Island Zero stuff
             MapCode.AppendLine("_LoadRefTables();");
@@ -877,27 +887,31 @@ namespace SMU_Mapper.Classes
 
         private string ConvertModelTable()
         {
-            var last = model.classes.Last();
             StringBuilder sb = new StringBuilder("public static string[,] classes = new string[,] {");
             string format = "{{\"{0}\",\"{1}\",\"{2}\",\"{3}\",\"{4}\",\"{5}\"}}";
 
+            
+            //Primary Business Objects
             foreach (var m in model.classes)
             {
                 string s = String.Format(format, m.item, m.itemrevision, m.masterform, m.masterformS, m.masterformRev, m.masterformRevS);
-
-                if (m.Equals(last))
-                {
-                    sb.Append(s);
-                }
-                else
-                {
-                    s += ",";
-
-                    sb.AppendLine(s);
-                }
+                sb.Append(s + ",");
             }
 
+
+            //string Item = String.Format(format, "Item", "ItemRevision", "Item Master", "ItemMaster", "ItemRevision Master", "ItemVersionMaster");
+
             sb.Append("};");
+
+            StringBuilder sb_secondary = new StringBuilder("public static string[,] classes_Secondary = new string[,] {");
+            //Secondary Business Objects
+            foreach (var m in model.classes.Where(x => x.isSecondary == true))
+            {
+                string s = String.Format(format, m.item, m.itemrevision, m.masterform, m.masterformS, m.masterformRev, m.masterformRevS);
+                sb_secondary.Append(s + ",");
+            }
+
+            sb_secondary.Append("};");
 
             var last2 = MapChanges.LastOrDefault();
             StringBuilder sb2 = new StringBuilder("\npublic static string[] recordedClasses = new string[] {");
@@ -961,7 +975,7 @@ namespace SMU_Mapper.Classes
             sb2.AppendLine("};");
 
 
-            return sb.AppendLine(sb2.ToString()).ToString();
+            return sb.AppendLine(sb2.ToString()).AppendLine(sb_secondary.ToString()).ToString();
         }
 
         private string ConvertRefTable()

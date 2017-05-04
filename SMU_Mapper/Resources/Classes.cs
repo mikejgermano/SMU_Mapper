@@ -4,6 +4,46 @@ static class Classes
     public static XNamespace _ns;
     public static string _IMAN_master_form;
 
+    public static bool isSecondary(string objectType)
+    {
+        int size = Classes.classes_Secondary.GetLength(0);
+
+        for (int x = 0; x < size; x++)
+        {
+            for (int y = 0; y < 2; y++)
+            {
+                if (objectType == Classes.classes_Secondary.GetValue(x, y).ToString())
+                    return true;
+            }
+        }
+
+
+        return false;
+    }
+
+    public static string getSecondaryClass(string objectType)
+    {
+        List<string> secondary_listItem = new List<string>();
+        List<string> secondary_listRev = new List<string>();
+        int size = Classes.classes_Secondary.GetLength(0);
+
+        for (int x = 0; x < size; x++)
+        {
+            for (int y = 0; y < 2; y++)
+            {
+                if (objectType == Classes.classes_Secondary.GetValue(x, y).ToString())
+                {
+                    if (y == 0)
+                        return "Item";
+                    else if (y == 1)
+                        return "ItemRevision";
+                }
+            }
+        }
+
+        return "";
+    }
+
     static private XElement[] _getMasterForm(XElement obj, string StorageClass)
     {
         var islandElements = Islands[obj.Attribute("island_id").Value];

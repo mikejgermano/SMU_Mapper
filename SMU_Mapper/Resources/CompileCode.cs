@@ -372,6 +372,11 @@ private static void _UpdateStubs()
 
             g.Attribute("object_type").Value = toClass;
 
+            if (Classes.isSecondary(toClass))
+            {
+                toClass = Classes.getSecondaryClass(toClass);
+            }
+
             if (g.Attribute("object_class").Value != "Form")
             {
                 g.Attribute("object_class").Value = toClass;
@@ -394,7 +399,10 @@ private static void _ReconcileLocalStubs()
 
     foreach (var e in stubs)
     {
-        e.Stub.SetAttributeValue("object_class", e.ChangeRecord[1]);
+        if (Classes.isSecondary(e.ChangeRecord[1]))
+            e.Stub.SetAttributeValue("object_class", Classes.getSecondaryClass(e.ChangeRecord[1]));
+        else
+            e.Stub.SetAttributeValue("object_class", e.ChangeRecord[1]);
         e.Stub.SetAttributeValue("object_type", e.ChangeRecord[1]);
     }
 }
@@ -404,14 +412,40 @@ private static void _RecordTypeChange(string puid, string from, string to)
     _TypeChangeLog[puid] = new string[2] { from, to };
 }
 
-private static void _TCPropagateItem(XElement _item, string sItem, string sRev, string sMasterForm, string sMasterFormS, string sMasterRevForm, string sMasterRevFormS, string tItem, string tRevision, string tMasterForm, string tMasterFormS, string tMasterRevForm, string tMasterRevFormS, int secondaryRule)
+private static void _TCPropagateItem(XElement _item, string sItem, string sRev, string sMasterForm, string sMasterFormS, string sMasterRevForm, string sMasterRevFormS, string tItem, string tRev, string tMasterForm, string tMasterFormS, string tMasterRevForm, string tMasterRevFormS, int secondaryRule)
 {
+    string sItemClass = sItem;
+    string sRevClass = sRev;
+    string tItemClass = sItem;
+    string tRevClass = sRev;
+
+    if (secondaryRule == 1)
+    {
+        sItemClass = "Item";
+        sRevClass = "ItemRevision";
+    }
+    else if (secondaryRule == 2)
+    {
+        tItemClass = "Item";
+        tRevClass = "ItemRevision";
+    }
+    else if (secondaryRule == 3)
+    {
+
+        sItemClass = "Item";
+        sRevClass = "ItemRevision";
+
+        tItemClass = "Item";
+        tRevClass = "ItemRevision";
+    }
+
     var Item = new Classes.ItemClass(_item, sRev, sMasterFormS, sMasterRevFormS);
+
 
     //change Item
     _RecordTypeChange(Item.element.Attribute("puid").Value, Item.element.Attribute("object_type").Value, tItem);
     Item.element.SetAttributeValue("object_type", tItem);
-    Item.element.Name = _ns + tItem;
+    Item.element.Name = _ns + tItemClass;
 
     //change masterForm
     if (Item.masterForm.element != null)
@@ -435,9 +469,9 @@ private static void _TCPropagateItem(XElement _item, string sItem, string sRev, 
     foreach (var tc in Item.revisions)
     {
         //change revision type
-        _RecordTypeChange(tc.element.Attribute("puid").Value, tc.element.Attribute("object_type").Value, tRevision);
-        tc.element.SetAttributeValue("object_type", tRevision);
-        tc.element.Name = _ns + tRevision;
+        _RecordTypeChange(tc.element.Attribute("puid").Value, tc.element.Attribute("object_type").Value, tRev);
+        tc.element.SetAttributeValue("object_type", tRev);
+        tc.element.Name = _ns + tRevClass;
 
         //change masterRevForm
         if (tc.masterRevForm.element != null)
@@ -460,14 +494,42 @@ private static void _TCPropagateItem(XElement _item, string sItem, string sRev, 
     }
 }
 
-private static void _TCPropagateItemRevision(XElement _rev, string sItem, string sRevision, string sMasterForm, string sMasterFormS, string sMasterRevForm, string sMasterRevFormS, string tItem, string tRevision, string tMasterForm, string tMasterFormS, string tMasterRevForm, string tMasterRevFormS, int secondaryRule)
+private static void _TCPropagateItemRevision(XElement _rev, string sItem, string sRev, string sMasterForm, string sMasterFormS, string sMasterRevForm, string sMasterRevFormS, string tItem, string tRev, string tMasterForm, string tMasterFormS, string tMasterRevForm, string tMasterRevFormS, int secondaryRule)
 {
-    var Revision = new Classes.RevisionClass(_rev, sItem, sRevision, sMasterFormS, sMasterRevFormS);
+    string sItemClass = sItem;
+    string sRevClass = sRev;
+    string tItemClass = sItem;
+    string tRevClass = sRev;
+
+    if (secondaryRule == 1)
+    {
+        sItemClass = "Item";
+        sRevClass = "ItemRevision";
+    }
+    else if (secondaryRule == 2)
+    {
+        tItemClass = "Item";
+        tRevClass = "ItemRevision";
+    }
+    else if (secondaryRule == 3)
+    {
+
+        sItemClass = "Item";
+        sRevClass = "ItemRevision";
+
+        tItemClass = "Item";
+        tRevClass = "ItemRevision";
+    }
+
+
+
+
+    var Revision = new Classes.RevisionClass(_rev, sItem, sRev, sMasterFormS, sMasterRevFormS);
 
     //change Item
     _RecordTypeChange(Revision.item.element.Attribute("puid").Value, Revision.item.element.Attribute("object_type").Value, tItem);
     Revision.item.element.SetAttributeValue("object_type", tItem);
-    Revision.item.element.Name = _ns + tItem;
+    Revision.item.element.Name = _ns + tItemClass;
 
     //change masterForm
     if (Revision.item.masterForm.element != null)
@@ -491,9 +553,9 @@ private static void _TCPropagateItemRevision(XElement _rev, string sItem, string
     foreach (var tc in Revision.item.revisions)
     {
         //change revision type
-        _RecordTypeChange(tc.element.Attribute("puid").Value, tc.element.Attribute("object_type").Value, tRevision);
-        tc.element.SetAttributeValue("object_type", tRevision);
-        tc.element.Name = _ns + tRevision;
+        _RecordTypeChange(tc.element.Attribute("puid").Value, tc.element.Attribute("object_type").Value, tRev);
+        tc.element.SetAttributeValue("object_type", tRev);
+        tc.element.Name = _ns + tRevClass;
 
         //change masterRevForm
         if (tc.masterRevForm.element != null)
