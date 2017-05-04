@@ -166,6 +166,7 @@ public partial class HeaderModel
 public partial class ModelClass
 {
     private string itemField, itemrevisionField, masterformField,masterformRevField;
+    private bool isSecondaryField = false;
 
 
     /// <remarks/>
@@ -249,7 +250,20 @@ public partial class ModelClass
         }
     }
 
-
+    /// <remarks/>
+    [System.Xml.Serialization.XmlAttributeAttribute("isSecondary")]
+    [System.ComponentModel.DefaultValueAttribute(false)]
+    public bool isSecondary
+    {
+        get
+        {
+            return this.isSecondaryField;
+        }
+        set
+        {
+            this.isSecondaryField = value;
+        }
+    }
 
 }
 
@@ -476,6 +490,8 @@ public partial class Map
 
     private string mapclassField;
 
+
+
     public Map()
     {
         this.mapclassField = "yes";
@@ -567,6 +583,8 @@ public partial class Map
             this.mapclassField = value;
         }
     }
+
+    
 }
 
 /// <remarks/>

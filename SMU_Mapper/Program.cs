@@ -14,7 +14,7 @@ namespace SMU_Mapper
                 //CreateModel.Create(@"D:\Work\ATO\mapper\Model\Amway-model.xml", "src-ItemModel.txt");
                 //CreateModel.Schema(@"C:\Users\germano\Desktop\mapper\TCXML_Schema\Denso\source_TCXML.xsd", "src-attributes.xml");
 
-                CreateModel.Create(@"D:\Work\ATO\mapper\Model\tgtD-model.xml", "target-ItemModel.txt");
+                //CreateModel.Create(@"D:\Work\ATO\mapper\Model\tgtD-model.xml", "target-ItemModel.txt");
                 //CreateModel.Schema(@"C:\Users\germano\Desktop\mapper\TCXML_Schema\Denso\target_TCXML.xsd", "target-attributes.xml");
                 //return;
 

@@ -25,6 +25,9 @@ namespace SMU_Mapper.Classes
         public enum refObjects
         { DatasetType, Group, ImanType, ImanVolume, ReleaseStatus, Tool, UnitOfMeasure, User };
 
+        public enum SecondaryMapRules
+        { None = 0, Left = 1, Right =2, Both=3 };
+
         public static Dictionary<refObjects, string> refObjectTable = new Dictionary<refObjects, string>
         {
             { refObjects.DatasetType,"datasettype_name" },
@@ -84,7 +87,7 @@ namespace SMU_Mapper.Classes
                 mClassT = model.getTcModel(map.b);
             }
 
-
+            SecondaryMapRules sRule = getSecondaryMapRule(mClassS, mClassT); 
 
             //if ((map.mapclass == "yes" && map.srccheck != null) || (mClassS == null || mClassT == null || map.mapclass == "no"))
             //{
@@ -133,17 +136,17 @@ namespace SMU_Mapper.Classes
                     switch (tcTypeT + tcTypeS + "|" + map.mapclass)
                     {
                         case "itemitem|yes":
-                            MapCode.AppendFormat(" _TCPropagateItem({0},\"{1}\",\"{2}\",\"{3}\",\"{4}\",\"{5}\",\"{6}\",\"{7}\",\"{8}\",\"{9}\",\"{10}\",\"{11}\",\"{12}\");", map.b, mClassS.item, mClassS.itemrevision, mClassS.masterform, mClassS.masterformS, mClassS.masterformRev, mClassS.masterformRevS, mClassT.item, mClassT.itemrevision, mClassT.masterform, mClassT.masterformS, mClassT.masterformRev, mClassT.masterformRevS);
+                            MapCode.AppendFormat(" _TCPropagateItem({0},\"{1}\",\"{2}\",\"{3}\",\"{4}\",\"{5}\",\"{6}\",\"{7}\",\"{8}\",\"{9}\",\"{10}\",\"{11}\",\"{12}\",{13});", map.b, mClassS.item, mClassS.itemrevision, mClassS.masterform, mClassS.masterformS, mClassS.masterformRev, mClassS.masterformRevS, mClassT.item, mClassT.itemrevision, mClassT.masterform, mClassT.masterformS, mClassT.masterformRev, mClassT.masterformRevS,(int)sRule);
                             break;
                         case "itemrevitemrev|yes":
-                            MapCode.AppendFormat(" if({13}.Name.LocalName != \"{13}\")_TCPropagateItemRevision({0},\"{1}\",\"{2}\",\"{3}\",\"{4}\",\"{5}\",\"{6}\",\"{7}\",\"{8}\",\"{9}\",\"{10}\",\"{11}\",\"{12}\");", map.b, mClassS.item, mClassS.itemrevision, mClassS.masterform, mClassS.masterformS, mClassS.masterformRev, mClassS.masterformRevS, mClassT.item, mClassT.itemrevision, mClassT.masterform, mClassT.masterformS, mClassT.masterformRev, mClassT.masterformRevS, map.b);
+                            MapCode.AppendFormat(" if({13}.Name.LocalName != \"{13}\")_TCPropagateItemRevision({0},\"{1}\",\"{2}\",\"{3}\",\"{4}\",\"{5}\",\"{6}\",\"{7}\",\"{8}\",\"{9}\",\"{10}\",\"{11}\",\"{12}\",{14});", map.b, mClassS.item, mClassS.itemrevision, mClassS.masterform, mClassS.masterformS, mClassS.masterformRev, mClassS.masterformRevS, mClassT.item, mClassT.itemrevision, mClassT.masterform, mClassT.masterformS, mClassT.masterformRev, mClassT.masterformRevS, map.b,(int)sRule);
                             break;
                         default:
                             MapCode.AppendFormat(" {1}.Name = _ns + \"{1}\";{1}.SetAttrValue(\"object_type\",\"{2}\");", Extensions.queryName, map.b, map.b);
                             break;
                     }
 
-                    MapCode.AppendFormat(" _RecordTypeChange({0}.Attribute(\"puid\").Value,\"{1}\",\"{2}\");", map.b, map.a, map.b);
+                    MapCode.AppendFormat("if({0}.Attribute(\"puid\") != null) _RecordTypeChange({0}.Attribute(\"puid\").Value,\"{1}\",\"{2}\");", map.b, map.a, map.b);
                 }
             }
 
@@ -314,6 +317,27 @@ namespace SMU_Mapper.Classes
             }
 
             return "";
+        }
+
+        public static SecondaryMapRules getSecondaryMapRule(ModelClass a, ModelClass b)
+        {
+            bool lis = false;
+            bool ris = false;
+
+            if(a != null)
+            {
+                lis = a.isSecondary;
+            }
+            if (b != null)
+            {
+                ris = b.isSecondary;
+            }
+
+            if (lis && !ris) return SecondaryMapRules.Left;
+            else if (!lis && ris) return SecondaryMapRules.Right;
+            else if (lis && ris) return SecondaryMapRules.Both;
+
+            return SecondaryMapRules.None;
         }
 
         public static string[] getRecordedMaps(Maps m)
@@ -776,13 +800,18 @@ namespace SMU_Mapper.Classes
             if (trgtMdlMiss.Count() > 0) { Console.WriteLine("--Target Mappings that don't match model--"); trgtMdlMiss.ForEach(Console.WriteLine); }
             //End
 
+
             //Map Reference Objects
+            if(maps.header.mapRefObject != null)
             foreach (HeaderMapRefObject m in maps.header.mapRefObject)
             {
                 MapCode.AppendLine(m.Convert().ToString());
             }
 
+            //Map, Load Lookups, then update Island Zero stuff
             MapCode.AppendLine("_LoadRefTables();");
+            MapCode.AppendLine("_UpdateGroupMembers();");
+            MapCode.AppendLine("_RemoveGroupRoleList();");
 
             //convert Map
             TotalMapCount = maps.Items.Count();
@@ -1025,6 +1054,7 @@ namespace SMU_Mapper.Classes
                 public static Dictionary<string, string> DatasetTypeRef = new Dictionary<string, string>();
                 public static Dictionary<string, string> ImanTypeRef = new Dictionary<string, string>();
                 public static Dictionary<string, string> ToolRef = new Dictionary<string, string>();
+                public static Dictionary<string, string> RoleRef = new Dictionary<string, string>();
 
                 public static Dictionary<string, string> UserRefVal = new Dictionary<string, string>();
                 public static Dictionary<string, string> GroupRefVal = new Dictionary<string, string>();
@@ -1033,6 +1063,7 @@ namespace SMU_Mapper.Classes
                 public static Dictionary<string, string> DatasetTypeRefVal = new Dictionary<string, string>();
                 public static Dictionary<string, string> ImanTypeRefVal = new Dictionary<string, string>();
                 public static Dictionary<string, string> ToolRefVal = new Dictionary<string, string>();
+                public static Dictionary<string, string> RoleRefVal = new Dictionary<string, string>();
 
                public static Dictionary<string, XElement> ReleaseStatusRef = new Dictionary<string, XElement>();
 
@@ -1063,10 +1094,11 @@ namespace SMU_Mapper.Classes
                     _ns = {0}.GetDefaultNamespace();
                     IEnumerable<XElement> {1} =  Enumerable.Empty<XElement>();
                     IEnumerable<XElement> {4} =  Enumerable.Empty<XElement>();
-
                     
+                    string _IMAN_master_form = """";
+                    var _IMAN_EL = _xml.Elements(_ns + ""ImanType"").Where(x => x.Attribute(""type_name"").Value == ""IMAN_master_form"").SingleOrDefault();
+                    if (_IMAN_EL != null) _IMAN_master_form = ""#"" + _IMAN_EL.Attribute(""elemId"").Value;
 
-                    string _IMAN_master_form = _GetRef(""relation_type"", ""IMAN_master_form"");
 
                     Classes._xml = _xml;
                     Classes._ns = _ns;
@@ -1079,7 +1111,6 @@ namespace SMU_Mapper.Classes
                     (""Caching Complete"").Print();
 
                     Global.initElemID(_xml);
-                    RemoveRoles();
 
                     {2}
 

@@ -46,7 +46,7 @@ public static class Global
 
         if (attr == null)
         {
-            Global._errList.Add(new ErrorList.ErrorInfo(Global._mapCounter, ErrorCodes.ATTRIBUTE_NULL, el.Attribute("puid").Value, el.Attribute("object_type").Value, TCTypes.WorkspaceObject, name.LocalName));
+            Global._errList.Add(new ErrorList.ErrorInfo(Global._mapCounter, ErrorCodes.ATTRIBUTE_NULL,(el.Attribute("puid") != null) ? el.Attribute("puid").Value : "", el.Attribute("object_type").Value, TCTypes.WorkspaceObject, name.LocalName));
             return null;
         }
 
@@ -59,10 +59,10 @@ public static class Global
         {
             if (value == null)
             {
-                Global._errList.Add(new ErrorList.ErrorInfo(Global._mapCounter, ErrorCodes.DELETE_NULL_ATTRIBUTE, el.Attribute("puid").Value, el.Name.LocalName, TCTypes.Attribute, name.LocalName));
+                Global._errList.Add(new ErrorList.ErrorInfo(Global._mapCounter, ErrorCodes.DELETE_NULL_ATTRIBUTE, (el.Attribute("puid") != null) ? el.Attribute("puid").Value : "", el.Name.LocalName, TCTypes.Attribute, name.LocalName));
                 return;
             }
-            ErrorList.ErrorInfo err = new ErrorList.ErrorInfo(Global._mapCounter, ErrorCodes.ATTRIBUTE_NULL, el.Attribute("puid").Value, el.Name.LocalName, TCTypes.Attribute, name.LocalName);
+            ErrorList.ErrorInfo err = new ErrorList.ErrorInfo(Global._mapCounter, ErrorCodes.ATTRIBUTE_NULL, (el.Attribute("puid") != null) ? el.Attribute("puid").Value : "", el.Name.LocalName, TCTypes.Attribute, name.LocalName);
             Global._errList.Add(err);
         }
         else

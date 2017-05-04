@@ -1,14 +1,23 @@
-private static void RemoveRoles()
+private static void _UpdateGroupMembers()
 {
-    var Roles = _xml.Elements(_ns + "Role").ToArray();
-    foreach (var role in Roles)
+    var GroupMemebers = _xml.Elements(_ns + "GroupMember").ToArray();
+    foreach (var gm in GroupMemebers)
     {
-        role.Remove();
+        string group = GroupRef[gm.Attribute("group").Value.Remove(0, 1)];
+        string user = UserRef[gm.Attribute("user").Value.Remove(0, 1)];
+        string role = RoleRef[gm.Attribute("role").Value.Remove(0, 1)];
+
+        string newMember = string.Join(",", group, user, role);
+        gm.SetAttrValue("member", newMember);
     }
-    var Groups = _xml.Elements(_ns + "Group");
-    foreach (var group in Groups)
+}
+
+private static void _RemoveGroupRoleList()
+{
+    var Groups = _xml.Elements(_ns + "Group").Where(x => x.Attribute("list_of_role") != null).ToArray();
+    foreach (var g in Groups)
     {
-        group.SetAttrValue("list_of_role", null);
+        g.Attribute("list_of_role").Remove();
     }
 }
 
@@ -134,6 +143,13 @@ private static void _LoadRefTables()
     {
         string elemId = el.Attribute("elemId").Value; string refVal = el.Attribute("object_name").Value;
         ToolRef[elemId] = refVal; ToolRefVal[refVal] = elemId;
+    }
+
+    elements = _xml.Elements(_ns + "Role");
+    foreach (var el in elements)
+    {
+        string elemId = el.Attribute("elemId").Value; string refVal = el.Attribute("role_name").Value;
+        RoleRef[elemId] = refVal; RoleRefVal[refVal] = elemId;
     }
 
     ReleaseStatusRef = _xml.Elements(_ns + "ReleaseStatus").ToDictionary(x => x.Attribute("puid").Value, x => x);
@@ -388,7 +404,7 @@ private static void _RecordTypeChange(string puid, string from, string to)
     _TypeChangeLog[puid] = new string[2] { from, to };
 }
 
-private static void _TCPropagateItem(XElement _item, string sItem, string sRev, string sMasterForm, string sMasterFormS, string sMasterRevForm, string sMasterRevFormS, string tItem, string tRevision, string tMasterForm, string tMasterFormS, string tMasterRevForm, string tMasterRevFormS)
+private static void _TCPropagateItem(XElement _item, string sItem, string sRev, string sMasterForm, string sMasterFormS, string sMasterRevForm, string sMasterRevFormS, string tItem, string tRevision, string tMasterForm, string tMasterFormS, string tMasterRevForm, string tMasterRevFormS, int secondaryRule)
 {
     var Item = new Classes.ItemClass(_item, sRev, sMasterFormS, sMasterRevFormS);
 
@@ -444,7 +460,7 @@ private static void _TCPropagateItem(XElement _item, string sItem, string sRev, 
     }
 }
 
-private static void _TCPropagateItemRevision(XElement _rev, string sItem, string sRevision, string sMasterForm, string sMasterFormS, string sMasterRevForm, string sMasterRevFormS, string tItem, string tRevision, string tMasterForm, string tMasterFormS, string tMasterRevForm, string tMasterRevFormS)
+private static void _TCPropagateItemRevision(XElement _rev, string sItem, string sRevision, string sMasterForm, string sMasterFormS, string sMasterRevForm, string sMasterRevFormS, string tItem, string tRevision, string tMasterForm, string tMasterFormS, string tMasterRevForm, string tMasterRevFormS, int secondaryRule)
 {
     var Revision = new Classes.RevisionClass(_rev, sItem, sRevision, sMasterFormS, sMasterRevFormS);
 
