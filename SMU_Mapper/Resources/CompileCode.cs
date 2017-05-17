@@ -630,3 +630,70 @@ private static void _FastTCPropagateItem(string sItem, string sRev, string sMast
         tc.Name = _ns + tMasterRevFormS;
     }
 }
+
+public static void _MapRelStatus(string refType, string refAttr, Dictionary<string, string> valLookup)
+{
+    var _query = _xml.Elements(_ns + refType).Where(x => valLookup.ContainsKey(x.Attribute("name").Value)).ToList();
+
+    foreach (var rel in _query)
+    {
+        string name = rel.GetAttrValue("name");
+        string value = "";
+        valLookup.TryGetValue(name, out value);
+
+
+        if (value == "")
+        {
+            _RemoveRelStatus(rel);
+        }
+        else
+            rel.SetAttrValue("name", value);
+    }
+}
+
+public static void _MapRefType(string refType, string refAttr, Dictionary<string, string> valLookup)
+{
+    IEnumerable<XElement> _query = null;
+
+    switch (refType)
+    {
+        case "User":
+        case "Group":
+        case "UnitOfMeasure":
+        case "ImanVolume":
+        case "DatasetType":
+        case "Tool":
+            _query = _xml.Elements(_ns + refType);
+
+            foreach (var m in _query)
+            {
+                string refVal = null;
+                valLookup.TryGetValue(m.GetAttrValue(refAttr), out refVal);
+
+                if (refVal != null)
+                    m.SetAttrValue(refAttr, refVal);
+            }
+            break;
+        case "ImanType":
+            _query = _xml.Elements(_ns + refType);
+
+            foreach (var m in _query)
+            {
+                string refVal = null;
+                valLookup.TryGetValue(m.GetAttrValue(refAttr), out refVal);
+
+                if (refVal != null)
+                {
+                    string currentType = m.GetAttrValue(refAttr);
+                    m.SetAttrValue(refAttr, refVal);
+
+                    var PrimType = _xml.Elements(_ns + currentType).ToArray();
+                    foreach (var el in PrimType)
+                    {
+                        el.Name = _ns + refVal;
+                    }
+                }
+            }
+            break;
+    }
+}

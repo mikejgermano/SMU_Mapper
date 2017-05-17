@@ -247,46 +247,43 @@ namespace SMU_Mapper.Classes
 
             if (lookup != null)
             {
-                MapCode.AppendFormat(@"try
-             {{
-                 _query = _xml.Elements(_ns + ""{0}""); 
+                if (type == refObjects.ReleaseStatus)
+                {
+                    MapCode.AppendFormat(@"try
+                 {{
+                     _query = _xml.Elements(_ns + ""{0}""); 
 
-                 foreach(var m in _query)
-                   {{
-                        string refVal = Lookup(""{2}"",m.GetAttrValue(""{1}""));
-                        
-                        if(refVal == """")
-                        {3}
-                        else if (refVal != null)
-                        m.SetAttrValue(""{1}"",refVal);
-                   }}
-             }}
-             catch(System.Exception ex)
-             {{
-                 throw new System.Exception(ex.Message);}}", type.ToString(), attributeRef, lookup, removeCode);
+                     _MapRelStatus(""{0}"",""{1}"",_lookups[""{2}""]);
+                 }}
+                 catch(System.Exception ex)
+                 {{
+                 throw new System.Exception(ex.Message);}}", type.ToString(), attributeRef, lookup);
+                }
+                else
+                {
+                    MapCode.AppendFormat(@"try
+                 {{
+                     _query = _xml.Elements(_ns + ""{0}""); 
+
+                     _MapRefType(""{0}"",""{1}"",_lookups[""{2}""]);
+                 }}
+                 catch(System.Exception ex)
+                 {{
+                 throw new System.Exception(ex.Message);}}", type.ToString(), attributeRef, lookup);
+                }
             }
             else if (lookup == null && values != null)
             {
                 MapCode.AppendFormat(@"try
              {{
-                 _query = _xml.Elements(_ns + ""{0}""); 
-
                  {2}
 
-                 foreach(var m in _query)
-                   {{
-                        string refVal = null;
-                        valLookup.TryGetValue(m.GetAttrValue(""{1}""), out refVal);
+                 _MapRefType(""{0}"",""{1}"",valLookup);
 
-                        if(refVal == """")
-                        {3}
-                        else if (refVal != null)
-                        m.SetAttrValue(""{1}"",refVal);
-                   }}
              }}
              catch(System.Exception ex)
              {{
-                 throw new System.Exception(ex.Message);}}", type.ToString(), attributeRef, valueCode, removeCode);
+                 throw new System.Exception(ex.Message);}}", type.ToString(), attributeRef, valueCode);
             }
 
 
@@ -414,7 +411,7 @@ namespace SMU_Mapper.Classes
             if (invalid_maps.Count() > 0)
             {
                 invalid_maps.ForEach(x => Console.WriteLine(x));
-                return null;
+                //return null;
             }
 
             var mapSrcArr = mapSrc.SelectMany(x => x).ToArray();
@@ -970,6 +967,8 @@ namespace SMU_Mapper.Classes
 
                     sb2.AppendLine(s);
                 }
+
+               
             }
 
             sb2.AppendLine("};");
