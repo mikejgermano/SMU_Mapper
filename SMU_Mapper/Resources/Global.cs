@@ -55,15 +55,11 @@ public static class Global
     }
     public static void SetAttrValue(this XElement el, XName name, object value)
     {
-        if (el.Attribute(name) == null)
+       
+        if (el.Attribute(name) == null && value == null)
         {
-            if (value == null)
-            {
-                //Global._errList.Add(new ErrorList.ErrorInfo(Global._mapCounter, ErrorCodes.DELETE_NULL_ATTRIBUTE, (el.Attribute("puid") != null) ? el.Attribute("puid").Value : "", el.Name.LocalName, TCTypes.Attribute, name.LocalName));
+                Global._errList.Add(new ErrorList.ErrorInfo(Global._mapCounter, ErrorCodes.DELETE_NULL_ATTRIBUTE, (el.Attribute("puid") != null) ? el.Attribute("puid").Value : "", el.Name.LocalName, TCTypes.Attribute, name.LocalName));
                 return;
-            }
-            //ErrorList.ErrorInfo err = new ErrorList.ErrorInfo(Global._mapCounter, ErrorCodes.ATTRIBUTE_NULL, (el.Attribute("puid") != null) ? el.Attribute("puid").Value : "", el.Name.LocalName, TCTypes.Attribute, name.LocalName);
-            //Global._errList.Add(err);
         }
         else
         {
