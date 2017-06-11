@@ -23,7 +23,7 @@ namespace SMU_Mapper.Classes
 
 
         public enum refObjects
-        { DatasetType, Group, ImanType, ImanVolume, ReleaseStatus, Tool, UnitOfMeasure, User };
+        { DatasetType, Group, ImanType, ImanVolume, ReleaseStatus, Tool, UnitOfMeasure, User,Role };
 
         public enum SecondaryMapRules
         { None = 0, Left = 1, Right = 2, Both = 3 };
@@ -37,7 +37,8 @@ namespace SMU_Mapper.Classes
             { refObjects.ReleaseStatus,"name" },
             { refObjects.Tool,"object_name" },
             { refObjects.UnitOfMeasure,"symbol" },
-            { refObjects.User,"user_id" }
+            { refObjects.User,"user_id" },
+            { refObjects.Role,"role_name" }
         };
 
 
@@ -51,7 +52,8 @@ namespace SMU_Mapper.Classes
         //{"release_status_list", new string[2]{"ReleaseStatus","name"}},
         {"dataset_type",        new string[2]{"DatasetType","datasettype_name"}},
         {"relation_type",       new string[2]{"ImanType","type_name"}},
-        {"tool_used",           new string[2]{"Tool","object_name"}}
+        {"tool_used",           new string[2]{"Tool","object_name"}},
+        {"role",           new string[2]{"Role","role_name"}}
         };
 
 

@@ -11,6 +11,14 @@ namespace SMU_Mapper
             try
             {
 
+                /*DateTime endDT = new DateTime(2017, 6, 16,0, 0, 0, 0, DateTimeKind.Utc);
+
+                if(DateTime.UtcNow > endDT)
+                {
+                    Console.WriteLine("License has expired. Please obtain a new license");
+                    return;
+                }*/
+
                 //CreateModel.Create(@"D:\Work\ATO\mapper\Model\Amway-model.xml", "src-ItemModel.txt");
                 //CreateModel.Schema(@"C:\Users\germano\Desktop\mapper\TCXML_Schema\Denso\source_TCXML.xsd", "src-attributes.xml");
 

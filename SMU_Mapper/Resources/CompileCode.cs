@@ -659,6 +659,7 @@ public static void _MapRefType(string refType, string refAttr, Dictionary<string
     {
         case "User":
         case "Group":
+        case "Role":
         case "UnitOfMeasure":
         case "ImanVolume":
         case "DatasetType":

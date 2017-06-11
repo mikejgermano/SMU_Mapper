@@ -127,14 +127,14 @@
                             <xs:simpleType>
                               <xs:restriction base="xs:string">
                                 <xs:minLength value="1"/>
-                                <xs:pattern value="[a-zA-Z0-9_]+"/>
+                                <xs:pattern value="[a-zA-Z0-9_\s]+"/>
                               </xs:restriction>
                             </xs:simpleType>
                           </xs:attribute>
                           <xs:attribute name="b" use="required" >
                             <xs:simpleType>
                               <xs:restriction base="xs:string">
-                                <xs:pattern value="[a-zA-Z0-9_]*"/>
+                                <xs:pattern value="[a-zA-Z0-9_\s]*"/>
                               </xs:restriction>
                             </xs:simpleType>
                           </xs:attribute>
@@ -149,6 +149,7 @@
                           <xs:enumeration value="ImanType"/>
                           <xs:enumeration value="ImanVolume"/>
                           <xs:enumeration value="ReleaseStatus"/>
+                          <xs:enumeration value="Role"/>
                           <xs:enumeration value="Tool"/>
                           <xs:enumeration value="UnitOfMeasure"/>
                           <xs:enumeration value="User"/>
@@ -343,7 +344,7 @@
                 <xs:simpleType>
                   <xs:restriction base="xs:string">
                     <xs:minLength value="1"/>
-                    <xs:pattern value="^(?!User|Group$|Volume|ReleaseStatus|Tool|DatasetType|UnitOfMeasure|ImanType)[a-zA-Z0-9_]+$"/>
+                    <xs:pattern value="^(?!User|Group$|Volume|ReleaseStatus|Tool|DatasetType|UnitOfMeasure|ImanType|Role)[a-zA-Z0-9_]+$"/>
                   </xs:restriction>
                 </xs:simpleType>
               </xs:attribute>
@@ -351,7 +352,7 @@
                 <xs:simpleType>
                   <xs:restriction base="xs:string">
                     <xs:minLength value="1"/>
-                    <xs:pattern value="^(?!User|Group$|Volume|ReleaseStatus|Tool|DatasetType|UnitOfMeasure|ImanType)[a-zA-Z0-9_]+$"/>
+                    <xs:pattern value="^(?!User|Group$|Volume|ReleaseStatus|Tool|DatasetType|UnitOfMeasure|ImanType|Role)[a-zA-Z0-9_]+$"/>
                   </xs:restriction>
                 </xs:simpleType>
               </xs:attribute>
