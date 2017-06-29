@@ -49,8 +49,13 @@
     [Description("Reference object could not be found")]
     [ErrorType(ErrorTypes.SevereError)]
     MISSING_REF_OBJECT,
+
+    ///<summary>The key supplied to the lookup is null. Lookup Ignored.</summary>
+    [Description("The key supplied to the lookup is null. Lookup Ignored.")]
+    [ErrorType(ErrorTypes.SevereError)]
+    LOOKUP_NULL_KEY,
 }
-public enum TCTypes {Attribute, Mapping, General, WorkspaceObject, Item, ItemMaster, ItemMasterS, ItemRevision, ItemRevisionMaster, ItemRevMasterS, Dataset, BOM, Relation, SystemObject };
+public enum TCTypes {Attribute, Mapping, General, WorkspaceObject, Item, ItemMaster, ItemMasterS, ItemRevision, ItemRevisionMaster, ItemRevMasterS, Dataset, BOM, Relation, SystemObject,Lookup };
 public enum ErrorTypes { SevereError = 0, FatalError = 1, Warning = -1 };
 public class ErrorType : System.Attribute
 {

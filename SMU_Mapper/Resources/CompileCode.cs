@@ -69,17 +69,22 @@ private static Dictionary<string, Dictionary<string, string>> LoadAllLookups(par
 
 private static string Lookup(string name, string key)
 {
+    if (key == null)
+    {
+        Global._errList.Add(new ErrorList.ErrorInfo(Global._mapCounter, ErrorCodes.LOOKUP_NULL_KEY, "", "", TCTypes.Lookup, name));
+        return null;
+    }
 
     Dictionary<string, string> d1;
     string value = null;
 
     if (_lookups.TryGetValue(name, out d1))
     {
-        d1.TryGetValue(key, out value);
+        if (d1.ContainsKey(key))
+            d1.TryGetValue(key, out value);
     }
 
-    return value;
-
+    return value ?? key;
 }
 
 private static string VarLookup(string name)

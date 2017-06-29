@@ -23,7 +23,7 @@ namespace SMU_Mapper.Classes
 
 
         public enum refObjects
-        { DatasetType, Group, ImanType, ImanVolume, ReleaseStatus, Tool, UnitOfMeasure, User,Role };
+        { DatasetType, Group, ImanType, ImanVolume, ReleaseStatus, Tool, UnitOfMeasure, User, Role };
 
         public enum SecondaryMapRules
         { None = 0, Left = 1, Right = 2, Both = 3 };
@@ -60,17 +60,9 @@ namespace SMU_Mapper.Classes
         public static StringBuilder Convert(this Map map, int i)
         {
             StringBuilder MapCode = new StringBuilder();
-            bool wildcard_used = false;
+            string mquery = queryName;
 
             string[] _DontChangeName = new string[] { "Dataset", "Form" };
-
-            //check for wildcard
-            if (map.a == wildcard || map.b == wildcard)
-            {
-                wildcard_used = true;
-                map.a = wildcard_replace;
-                map.b = wildcard_replace;
-            }
 
             //Change other TC Class types
             string tcTypeS = model.getTcType(map.a);
@@ -94,11 +86,10 @@ namespace SMU_Mapper.Classes
             //if ((map.mapclass == "yes" && map.srccheck != null) || (mClassS == null || mClassT == null || map.mapclass == "no"))
             //{
             string query = "";
+            
             //Query
-            if (wildcard_used)
-                query = "{0} = from {3} in _xml.Elements() {4} {2} select {3};";
-            else
-                query = "{0} = from {3} in _xml.Elements(_ns + \"{1}\") {4} {2} select {3};";
+            query = "{0} = from {3} in _xml.Elements(_ns + \"{1}\") {4} {2} select {5};";
+            
             //Joins
             string joins = "";
             if (map.srcjoin != null)
@@ -115,40 +106,73 @@ namespace SMU_Mapper.Classes
 
             }
 
+            //SELECT STATEMENT
+            string select = "";
+            List<string> sjoins = new List<string>();
+            if (map.srcjoin == null)
+                select = map.a;
+            else
+            {
+                //create new query match return type
+                mquery = queryName + i.ToString();
 
-            string queryBuild = String.Format(query, queryName, map.a, where, map.a, joins);
+                sjoins = map.srcjoin.Select(x => x.obj).ToList();
+                sjoins.Add(map.a);
+                select = "new {" + string.Join(",", sjoins) + "}";
+            }
+
+            //BUILD THE QUERY
+            string queryBuild = "";
+            if (map.srcjoin == null)
+                queryBuild = String.Format(query, mquery, map.a, where, map.a, joins,select);
+            else
+                queryBuild = "var " + String.Format(query, mquery, map.a, where, map.a, joins, select);
 
             MapCode.AppendLine(queryBuild);
 
             //Errorchecking Empty Query
-            MapCode.AppendFormat("if (!_query.Any()) {{ Global._errList.Add(new ErrorList.ErrorInfo(Global._mapCounter, ErrorCodes.MAP_QUERY_EMPTY, \"\", \"\", TCTypes.Mapping, \"{0}\")); }}", map.a);
+            MapCode.AppendFormat("if (!{0}.Any()) {{ Global._errList.Add(new ErrorList.ErrorInfo(Global._mapCounter, ErrorCodes.MAP_QUERY_EMPTY, \"\", \"\", TCTypes.Mapping, \"{1}\")); }}", mquery, map.a);
 
             //Start the itteration
-            MapCode.AppendFormat("foreach(var {0} in {1}){{", map.b, Extensions.queryName);
+
+            MapCode.AppendFormat("foreach(var el in {1}){{", map.a, mquery);
+
+            //Add Join definitions if they exist
+            string joinDefStatment = "var {0} = el.{1};";
+            if (sjoins.Any())
+            {
+                foreach (string obj in map.srcjoin.Select(x => x.obj).ToList())
+                {
+                    MapCode.AppendLine(String.Format(joinDefStatment, obj, obj));
+                }
+                MapCode.AppendLine(String.Format(joinDefStatment, map.a, map.a));
+            }
+            else
+                MapCode.AppendLine(String.Format("var {0} = el;", map.a, map.b));
 
             //Map-Class Name change
 
-            if (map.a != map.b && wildcard_used == false)
+            if (map.a != map.b)
             {
                 if (_DontChangeName.Contains(map.a))
-                    MapCode.AppendFormat(" {1}.SetAttrValue(\"object_type\",\"{2}\");", Extensions.queryName, map.b, map.b);
+                    MapCode.AppendFormat(" {0}.SetAttrValue(\"object_type\",\"{1}\");", mquery, map.a, map.b);
                 else
                 {
-                    //MapCode.AppendFormat(" {1}.Name = _ns + \"{1}\";{1}.SetAttrValue(\"object_type\",\"{2}\");", Extensions.queryName, map.b, map.b);
+                    //MapCode.AppendFormat(" {1}.Name = _ns + \"{1}\";{1}.SetAttrValue(\"object_type\",\"{2}\");", mquery, map.b, map.b);
                     switch (tcTypeT + tcTypeS + "|" + map.mapclass)
                     {
                         case "itemitem|yes":
-                            MapCode.AppendFormat(" _TCPropagateItem({0},\"{1}\",\"{2}\",\"{3}\",\"{4}\",\"{5}\",\"{6}\",\"{7}\",\"{8}\",\"{9}\",\"{10}\",\"{11}\",\"{12}\",{13});", map.b, mClassS.item, mClassS.itemrevision, mClassS.masterform, mClassS.masterformS, mClassS.masterformRev, mClassS.masterformRevS, mClassT.item, mClassT.itemrevision, mClassT.masterform, mClassT.masterformS, mClassT.masterformRev, mClassT.masterformRevS, (int)sRule);
+                            MapCode.AppendFormat(" _TCPropagateItem({0},\"{1}\",\"{2}\",\"{3}\",\"{4}\",\"{5}\",\"{6}\",\"{7}\",\"{8}\",\"{9}\",\"{10}\",\"{11}\",\"{12}\",{13});", map.a, mClassS.item, mClassS.itemrevision, mClassS.masterform, mClassS.masterformS, mClassS.masterformRev, mClassS.masterformRevS, mClassT.item, mClassT.itemrevision, mClassT.masterform, mClassT.masterformS, mClassT.masterformRev, mClassT.masterformRevS, (int)sRule);
                             break;
                         case "itemrevitemrev|yes":
-                            MapCode.AppendFormat(" if({13}.Name.LocalName != \"{13}\")_TCPropagateItemRevision({0},\"{1}\",\"{2}\",\"{3}\",\"{4}\",\"{5}\",\"{6}\",\"{7}\",\"{8}\",\"{9}\",\"{10}\",\"{11}\",\"{12}\",{14});", map.b, mClassS.item, mClassS.itemrevision, mClassS.masterform, mClassS.masterformS, mClassS.masterformRev, mClassS.masterformRevS, mClassT.item, mClassT.itemrevision, mClassT.masterform, mClassT.masterformS, mClassT.masterformRev, mClassT.masterformRevS, map.b, (int)sRule);
+                            MapCode.AppendFormat(" if({13}.Name.LocalName != \"{13}\")_TCPropagateItemRevision({0},\"{1}\",\"{2}\",\"{3}\",\"{4}\",\"{5}\",\"{6}\",\"{7}\",\"{8}\",\"{9}\",\"{10}\",\"{11}\",\"{12}\",{14});", map.a, mClassS.item, mClassS.itemrevision, mClassS.masterform, mClassS.masterformS, mClassS.masterformRev, mClassS.masterformRevS, mClassT.item, mClassT.itemrevision, mClassT.masterform, mClassT.masterformS, mClassT.masterformRev, mClassT.masterformRevS, map.a, (int)sRule);
                             break;
                         default:
-                            MapCode.AppendFormat(" {1}.Name = _ns + \"{1}\";{1}.SetAttrValue(\"object_type\",\"{2}\");", Extensions.queryName, map.b, map.b);
+                            MapCode.AppendFormat(" {1}.Name = _ns + \"{1}\";{1}.SetAttrValue(\"object_type\",\"{2}\");", mquery, map.a, map.b);
                             break;
                     }
 
-                    MapCode.AppendFormat("if({0}.Attribute(\"puid\") != null) _RecordTypeChange({0}.Attribute(\"puid\").Value,\"{1}\",\"{2}\");", map.b, map.a, map.b);
+                    MapCode.AppendFormat("if({0}.Attribute(\"puid\") != null) _RecordTypeChange({0}.Attribute(\"puid\").Value,\"{1}\",\"{2}\");", map.a, map.a, map.b);
                 }
             }
 
@@ -163,20 +187,20 @@ namespace SMU_Mapper.Classes
                     {
                         case "MapAttr":
                             {
-                                string q = ConvertMapAttr((MapAttr)task, map.b);
+                                string q = ConvertMapAttr((MapAttr)task, map.a);
                                 Tasks.AppendLine(q);
                                 break;
                             }
                         case "MapAttribute":
                             {
-                                string q = ConvertMapAttribute((MapAttribute)task, map.b);
+                                string q = ConvertMapAttribute((MapAttribute)task, map.a);
                                 Tasks.AppendLine(q);
 
                                 break;
                             }
                         case "MapAttrCheck":
                             {
-                                string q = ConvertMapAttrCheck((MapAttrCheck)task, map.b);
+                                string q = ConvertMapAttrCheck((MapAttrCheck)task, map.a);
                                 Tasks.AppendLine(q);
 
                                 break;
@@ -477,6 +501,12 @@ namespace SMU_Mapper.Classes
 
         private static string ConvertMapAttribute(MapAttribute mAttribute, string alias)
         {
+            if (mAttribute.name.Contains("@"))
+            {
+                alias = mAttribute.name.Split('@')[0];
+                mAttribute.name = mAttribute.name.Split('@')[1];
+            }
+
             string value = mAttribute.value;
 
             value = _ConvertAttributeString(alias, value);
@@ -502,6 +532,12 @@ namespace SMU_Mapper.Classes
 
         private static string ConvertMapAttribute(AttrCheckAttribute mAttribute, string alias)
         {
+            if (mAttribute.name.Contains("@"))
+            {
+                alias = mAttribute.name.Split('@')[0];
+                mAttribute.name = mAttribute.name.Split('@')[1];
+            }
+
             string value = mAttribute.value;
 
             value = _ConvertAttributeString(alias, value);
@@ -829,7 +865,7 @@ namespace SMU_Mapper.Classes
             {
                 if (m.GetType().Name == "Map")
                 {
-                    MapCode.AppendLine("\n\n// Map :" + i.ToString());
+                    MapCode.AppendLine("\n\n// Map :" + ((Map)m).a + "->" + ((Map)m).b);
                     MapCode.AppendLine("Global._mapCounter = " + i.ToString() + ";");
                     MapCode.AppendLine(((Map)m).Convert(i).ToString());
 
@@ -889,7 +925,7 @@ namespace SMU_Mapper.Classes
             StringBuilder sb = new StringBuilder("public static string[,] classes = new string[,] {");
             string format = "{{\"{0}\",\"{1}\",\"{2}\",\"{3}\",\"{4}\",\"{5}\"}}";
 
-            
+
             //Primary Business Objects
             foreach (var m in model.classes)
             {
@@ -970,7 +1006,7 @@ namespace SMU_Mapper.Classes
                     sb2.AppendLine(s);
                 }
 
-               
+
             }
 
             sb2.AppendLine("};");
