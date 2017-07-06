@@ -61,8 +61,19 @@ namespace SMU_Mapper.Classes
         {
             StringBuilder MapCode = new StringBuilder();
             string mquery = queryName;
-
             string[] _DontChangeName = new string[] { "Dataset", "Form" };
+            bool hasWildcard = false;
+
+            Validate(map,i);
+
+
+            //If wildcard is used
+            if (map.a == wildcard)
+            {
+                hasWildcard = true;
+                map.a = wildcard_replace;
+                map.b = wildcard_replace;
+            }
 
             //Change other TC Class types
             string tcTypeS = model.getTcType(map.a);
@@ -83,13 +94,10 @@ namespace SMU_Mapper.Classes
 
             SecondaryMapRules sRule = getSecondaryMapRule(mClassS, mClassT);
 
-            //if ((map.mapclass == "yes" && map.srccheck != null) || (mClassS == null || mClassT == null || map.mapclass == "no"))
-            //{
-            string query = "";
-            
             //Query
-            query = "{0} = from {3} in _xml.Elements(_ns + \"{1}\") {4} {2} select {5};";
-            
+            string query = "{0} = from {3} in _xml.Elements(_ns + \"{1}\") {4} {2} select {5};";
+            string query_wildcard = "{0} = from {1} in _xml.Elements() {2} select {1};";
+
             //Joins
             string joins = "";
             if (map.srcjoin != null)
@@ -123,10 +131,18 @@ namespace SMU_Mapper.Classes
 
             //BUILD THE QUERY
             string queryBuild = "";
-            if (map.srcjoin == null)
-                queryBuild = String.Format(query, mquery, map.a, where, map.a, joins,select);
+            if (hasWildcard)
+            {
+                queryBuild = String.Format(query_wildcard, mquery, wildcard_replace, where);
+            }
             else
-                queryBuild = "var " + String.Format(query, mquery, map.a, where, map.a, joins, select);
+            {
+                if (map.srcjoin == null)
+                    queryBuild = String.Format(query, mquery, map.a, where, map.a, joins, select);
+                else
+                    queryBuild = "var " + String.Format(query, mquery, map.a, where, map.a, joins, select);
+            }
+           
 
             MapCode.AppendLine(queryBuild);
 
@@ -168,7 +184,7 @@ namespace SMU_Mapper.Classes
                             MapCode.AppendFormat(" if({13}.Name.LocalName != \"{13}\")_TCPropagateItemRevision({0},\"{1}\",\"{2}\",\"{3}\",\"{4}\",\"{5}\",\"{6}\",\"{7}\",\"{8}\",\"{9}\",\"{10}\",\"{11}\",\"{12}\",{14});", map.a, mClassS.item, mClassS.itemrevision, mClassS.masterform, mClassS.masterformS, mClassS.masterformRev, mClassS.masterformRevS, mClassT.item, mClassT.itemrevision, mClassT.masterform, mClassT.masterformS, mClassT.masterformRev, mClassT.masterformRevS, map.a, (int)sRule);
                             break;
                         default:
-                            MapCode.AppendFormat(" {1}.Name = _ns + \"{1}\";{1}.SetAttrValue(\"object_type\",\"{2}\");", mquery, map.a, map.b);
+                            MapCode.AppendFormat(" {1}.Name = _ns + \"{2}\";{1}.SetAttrValue(\"object_type\",\"{2}\");", mquery, map.a, map.b);
                             break;
                     }
 
@@ -225,6 +241,20 @@ namespace SMU_Mapper.Classes
             }*/
 
             return MapCode;
+        }
+
+        private static void Validate(Map map,int i)
+        {
+            //Wild Card
+            if(map.a == "*" || map.b == "*")
+            {
+                if ((map.a + map.b) != "**")
+                    throw new Exception("Error on Map #" + i + ": " + "When using a wildcard both 'a' and 'b' must be '*'");
+
+                if(map.srcjoin != null)
+                    throw new Exception("Error on Map #" + i + ": " + "When using a wildcard 'joins' cannot be used");
+            }
+
         }
 
         public static StringBuilder Convert(this Script map, int i)
@@ -1074,6 +1104,7 @@ namespace SMU_Mapper.Classes
             using System.ComponentModel;
             using System.IO;
             using System.Diagnostics;
+            using System.Text.RegularExpressions;
 
             {11}
 
