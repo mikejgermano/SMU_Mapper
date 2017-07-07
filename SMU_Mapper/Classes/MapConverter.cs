@@ -762,7 +762,7 @@ namespace SMU_Mapper.Classes
         {
             if (val.Contains("$"))
             {
-                string pattern = @"\$([\w]*)";
+                string pattern = @"\$([\w]+)";
                 string result = Regex.Replace(val, pattern, alias + "VarLookup(\"" + "$1" + "\")");
 
                 return result;
