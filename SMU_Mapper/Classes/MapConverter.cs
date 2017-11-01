@@ -181,7 +181,7 @@ namespace SMU_Mapper.Classes
                             MapCode.AppendFormat(" _TCPropagateItem({0},\"{1}\",\"{2}\",\"{3}\",\"{4}\",\"{5}\",\"{6}\",\"{7}\",\"{8}\",\"{9}\",\"{10}\",\"{11}\",\"{12}\",{13});", map.a, mClassS.item, mClassS.itemrevision, mClassS.masterform, mClassS.masterformS, mClassS.masterformRev, mClassS.masterformRevS, mClassT.item, mClassT.itemrevision, mClassT.masterform, mClassT.masterformS, mClassT.masterformRev, mClassT.masterformRevS, (int)sRule);
                             break;
                         case "itemrevitemrev|yes":
-                            MapCode.AppendFormat(" if({13}.Name.LocalName != \"{13}\")_TCPropagateItemRevision({0},\"{1}\",\"{2}\",\"{3}\",\"{4}\",\"{5}\",\"{6}\",\"{7}\",\"{8}\",\"{9}\",\"{10}\",\"{11}\",\"{12}\",{14});", map.a, mClassS.item, mClassS.itemrevision, mClassS.masterform, mClassS.masterformS, mClassS.masterformRev, mClassS.masterformRevS, mClassT.item, mClassT.itemrevision, mClassT.masterform, mClassT.masterformS, mClassT.masterformRev, mClassT.masterformRevS, map.a, (int)sRule);
+                            MapCode.AppendFormat(" if({0}.Name.LocalName != \"{13}\")_TCPropagateItemRevision({0},\"{1}\",\"{2}\",\"{3}\",\"{4}\",\"{5}\",\"{6}\",\"{7}\",\"{8}\",\"{9}\",\"{10}\",\"{11}\",\"{12}\",{14});", map.a, mClassS.item, mClassS.itemrevision, mClassS.masterform, mClassS.masterformS, mClassS.masterformRev, mClassS.masterformRevS, mClassT.item, mClassT.itemrevision, mClassT.masterform, mClassT.masterformS, mClassT.masterformRev, mClassT.masterformRevS, map.b, (int)sRule);
                             break;
                         default:
                             MapCode.AppendFormat(" {1}.Name = _ns + \"{2}\";{1}.SetAttrValue(\"object_type\",\"{2}\");", mquery, map.a, map.b);

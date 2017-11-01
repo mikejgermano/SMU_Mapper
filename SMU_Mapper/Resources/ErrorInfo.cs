@@ -1,5 +1,10 @@
 ﻿public enum ErrorCodes
 {
+    ///<summary>Could not find XML file in the specified path</summary>
+    [Description("Could not find XML file in the specified path")]
+    [ErrorType(ErrorTypes.FatalError)]
+    XML_NOT_FOUND,
+
     ///<summary>Mapping has been skipped because it found zero source objects</summary>
     [Description("Mapping has been skipped because it found zero source objects")]
     [ErrorType(ErrorTypes.Warning)]
