@@ -414,7 +414,12 @@ private static void _ReconcileLocalStubs()
 
 private static void _RecordTypeChange(string puid, string from, string to)
 {
-    _TypeChangeLog[puid] = new string[2] { from, to };
+    string[] output;
+
+    if (_TypeChangeLog.TryGetValue(puid, out output))
+        _TypeChangeLog[puid][1] = to;
+    else
+        _TypeChangeLog[puid] = new string[2] { from, to };
 }
 
 private static void _TCPropagateItem(XElement _item, string sItem, string sRev, string sMasterForm, string sMasterFormS, string sMasterRevForm, string sMasterRevFormS, string tItem, string tRev, string tMasterForm, string tMasterFormS, string tMasterRevForm, string tMasterRevFormS, int secondaryRule)
