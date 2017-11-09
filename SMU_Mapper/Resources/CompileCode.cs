@@ -449,7 +449,7 @@ private static void _TCPropagateItem(XElement _item, string sItem, string sRev, 
         tRevClass = "ItemRevision";
     }
 
-    var Item = new Classes.ItemClass(_item, sRev, sMasterFormS, sMasterRevFormS);
+    var Item = new Classes.ItemClass(_item, sRevClass, sMasterFormS, sMasterRevFormS);
 
 
     //change Item
@@ -534,7 +534,7 @@ private static void _TCPropagateItemRevision(XElement _rev, string sItem, string
 
 
 
-    var Revision = new Classes.RevisionClass(_rev, sItem, sRev, sMasterFormS, sMasterRevFormS);
+    var Revision = new Classes.RevisionClass(_rev, sItemClass, sRevClass, sMasterFormS, sMasterRevFormS);
 
     //change Item
     _RecordTypeChange(Revision.item.element.Attribute("puid").Value, Revision.item.element.Attribute("object_type").Value, tItem);

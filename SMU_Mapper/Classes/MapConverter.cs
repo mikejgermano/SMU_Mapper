@@ -75,8 +75,20 @@ namespace SMU_Mapper.Classes
                 map.b = wildcard_replace;
             }
 
+            string sClassSecondType = "";
+            bool sClassIsSecond = false;
+
+            if (map.a.Contains("{"))
+            {
+                sClassIsSecond = true;
+                Regex r = new Regex("(.+){(.+)}");
+                sClassSecondType = r.Match(map.a).Groups[1].Value;
+                map.a = r.Match(map.a).Groups[2].Value;
+            }
+
             //Change other TC Class types
             string tcTypeS = model.getTcType(map.a);
+            
             ModelClass mClassS = null;
 
             if (tcTypeS != "")
@@ -111,7 +123,13 @@ namespace SMU_Mapper.Classes
 
                 //build Where
                 where = ConvertIf(map.a, map.srccheck);
-
+            }
+            else if(map.srccheck == null && sClassIsSecond == true)
+            {
+                SrcCheck srcC = new SrcCheck();
+                srcC.@if = $"@object_type = '{map.a}'";
+                map.a = sClassSecondType;
+                where = ConvertIf(map.a, srcC);
             }
 
             //SELECT STATEMENT
@@ -447,10 +465,17 @@ namespace SMU_Mapper.Classes
 
 
             List<string> invalid_maps = new List<string>();
-            string invalidMapRegex = "Cannot map {0} to {1} - {2} is not defined in model";
+            string invalidMapRegex = "{0} to {1} - {2} is not defined in model";
             foreach (var map in m.Items.Where(x => x.GetType() == typeof(Map)).Cast<Map>().Where(x => x.srccheck == null && x.a != x.b && !MapChanges.Contains(x.a)))
             {
-                var src = getFullModel(map.a, m);
+                string srcClass = map.a;
+                if (map.a.Contains("{"))
+                {
+                    Regex r = new Regex("(.+){(.+)}");
+                    srcClass = r.Match(map.a).Groups[2].Value;
+                }
+
+                var src = getFullModel(srcClass, m);
                 var trgt = getFullModel(map.b, m);
 
                 if (src == null && trgt != null)
@@ -1171,7 +1196,14 @@ namespace SMU_Mapper.Classes
                     bool db_result = CreateDatabase(Classes.recordedClasses);
                    
                     (""Loading XML - "" + args[0]).Print();
-                    try{{{0} = XElement.Load(args[0]);}}catch(System.Exception ex){{Global._errList.Add(new ErrorList.ErrorInfo(0, ErrorCodes.XML_MALFORMED, """", """",TCTypes.General, """"));}}
+                    try{{{0} = XElement.Load(args[0]);}}
+                    catch (IOException)
+                    {{
+                        Global._errList.Add(new ErrorList.ErrorInfo(0, ErrorCodes.XML_NOT_FOUND, """", """", TCTypes.General, """"));
+                    }}catch(System.Exception)
+                    {{
+                        Global._errList.Add(new ErrorList.ErrorInfo(0, ErrorCodes.XML_MALFORMED, """", """",TCTypes.General, """"));
+                    }}
 
                     _ns = {0}.GetDefaultNamespace();
                     IEnumerable<XElement> {1} =  Enumerable.Empty<XElement>();

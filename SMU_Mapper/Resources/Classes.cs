@@ -190,6 +190,10 @@ static class Classes
         List<string> ItemMasterSList = new List<string>(bound0);
         List<string> ItemRevSList = new List<string>(bound0);
 
+        //Add OOTB
+        ItemList.Add("Item");
+        RevList.Add("ItemRevision");
+
         for (int i = 0; i <= bound0; i++)
         {
             ItemList.Add(classes[i, 0]);
