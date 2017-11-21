@@ -344,7 +344,7 @@
                 <xs:simpleType>
                   <xs:restriction base="xs:string">
                     <xs:minLength value="1"/>
-                    <xs:pattern value="^(?!User|Group$|Volume|ReleaseStatus|Tool|DatasetType|UnitOfMeasure|ImanType|Role$)(^[a-zA-Z0-9_]+|^\*$|^Item{[a-zA-Z0-9_\s]+}$|^ItemRevision{[a-zA-Z0-9_\s]+})$"/>
+                    <xs:pattern value="^(?!User|Group$|Volume|ReleaseStatus|Tool|DatasetType|UnitOfMeasure|ImanType|Role$)(^[a-zA-Z0-9_]+|^\*$|^[a-zA-Z0-9_]+{[a-zA-Z0-9_\s]+}$)$"/>
                   </xs:restriction>
                 </xs:simpleType>
               </xs:attribute>
@@ -352,7 +352,7 @@
                 <xs:simpleType>
                   <xs:restriction base="xs:string">
                     <xs:minLength value="1"/>
-                    <xs:pattern value="^(?!User|Group$|Volume|ReleaseStatus|Tool|DatasetType|UnitOfMeasure|ImanType|Role$)([a-zA-Z0-9_]+|\*)$"/>
+                    <xs:pattern value="^(?!User|Group$|Volume|ReleaseStatus|Tool|DatasetType|UnitOfMeasure|ImanType|Role$)(^[a-zA-Z0-9_]+|^\*$|^[a-zA-Z0-9_]+{[a-zA-Z0-9_\s]+}$)$"/>
                   </xs:restriction>
                 </xs:simpleType>
               </xs:attribute>

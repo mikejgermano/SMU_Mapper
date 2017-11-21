@@ -75,8 +75,12 @@ namespace SMU_Mapper.Classes
                 map.b = wildcard_replace;
             }
 
-            string sClassSecondType = "";
+            string sClass = map.a;
+            string sClassSecondType = map.a;
             bool sClassIsSecond = false;
+            string tClass = map.b;
+            string tClassSecondType = map.b;
+            bool tClassIsSecond = false;
 
             if (map.a.Contains("{"))
             {
@@ -86,8 +90,17 @@ namespace SMU_Mapper.Classes
                 map.a = r.Match(map.a).Groups[2].Value;
             }
 
+            if (map.b.Contains("{"))
+            {
+                tClassIsSecond = true;
+                Regex r = new Regex("(.+){(.+)}");
+                tClassSecondType = r.Match(map.b).Groups[1].Value;
+                map.b = r.Match(map.b).Groups[2].Value;
+            }
+
             //Change other TC Class types
             string tcTypeS = model.getTcType(map.a);
+
             
             ModelClass mClassS = null;
 
@@ -167,6 +180,24 @@ namespace SMU_Mapper.Classes
             //Errorchecking Empty Query
             MapCode.AppendFormat("if (!{0}.Any()) {{ Global._errList.Add(new ErrorList.ErrorInfo(Global._mapCounter, ErrorCodes.MAP_QUERY_EMPTY, \"\", \"\", TCTypes.Mapping, \"{1}\")); }}", mquery, map.a);
 
+            //Change the class
+            //Map-Class Name change
+            if (sClass != tClass)
+            {
+                switch (tcTypeT + tcTypeS + "|" + map.mapclass)
+                {
+                    case "itemitem|yes":
+                        MapCode.AppendFormat($@"_FastTCPropagateItem(""{map.a}"",""{tClassSecondType}"", ""{mClassS.item}"", ""{mClassS.itemrevision}"", ""{mClassS.masterform}"", ""{mClassS.masterformS}"", ""{mClassS.masterformRev}"", ""{mClassS.masterformRevS}"", ""{mClassT.item}"", ""{mClassT.itemrevision}"", ""{mClassT.masterform}"", ""{mClassT.masterformS}"", ""{mClassT.masterformRev}"", ""{mClassT.masterformRevS}"", {(int)sRule});");
+
+                        //MapCode.AppendFormat(" _FastTCPropagateItem(\"{0}\",\"{1}\",\"{2}\",\"{3}\",\"{4}\",\"{5}\",\"{6}\",\"{7}\",\"{8}\",\"{9}\",\"{10}\",\"{11}\",\"{12}\",{13});\n", );
+                        break;
+                    case "itemrevitemrev|yes":
+                        MapCode.AppendFormat($@"_FastTCPropagateItem(""{map.a}"",""{tClassSecondType}"", ""{mClassS.item}"", ""{mClassS.itemrevision}"", ""{mClassS.masterform}"", ""{mClassS.masterformS}"", ""{mClassS.masterformRev}"", ""{mClassS.masterformRevS}"", ""{mClassT.item}"", ""{mClassT.itemrevision}"", ""{mClassT.masterform}"", ""{mClassT.masterformS}"", ""{mClassT.masterformRev}"", ""{mClassT.masterformRevS}"", {(int)sRule});");
+                        break;
+                }
+            }
+            
+
             //Start the itteration
 
             MapCode.AppendFormat("foreach(var el in {1}){{", map.a, mquery);
@@ -184,22 +215,24 @@ namespace SMU_Mapper.Classes
             else
                 MapCode.AppendLine(String.Format("var {0} = el;", map.a, map.b));
 
-            //Map-Class Name change
+           
 
-            if (map.a != map.b)
+            if (map.a != map.b || sClassIsSecond)
             {
                 if (_DontChangeName.Contains(map.a))
                     MapCode.AppendFormat(" {0}.SetAttrValue(\"object_type\",\"{1}\");", mquery, map.a, map.b);
-                else
+                /*else
                 {
                     //MapCode.AppendFormat(" {1}.Name = _ns + \"{1}\";{1}.SetAttrValue(\"object_type\",\"{2}\");", mquery, map.b, map.b);
                     switch (tcTypeT + tcTypeS + "|" + map.mapclass)
                     {
                         case "itemitem|yes":
-                            MapCode.AppendFormat(" _TCPropagateItem({0},\"{1}\",\"{2}\",\"{3}\",\"{4}\",\"{5}\",\"{6}\",\"{7}\",\"{8}\",\"{9}\",\"{10}\",\"{11}\",\"{12}\",{13});", map.a, mClassS.item, mClassS.itemrevision, mClassS.masterform, mClassS.masterformS, mClassS.masterformRev, mClassS.masterformRevS, mClassT.item, mClassT.itemrevision, mClassT.masterform, mClassT.masterformS, mClassT.masterformRev, mClassT.masterformRevS, (int)sRule);
+                            MapCode.AppendFormat(" _FastTCPropagateItem({0}.Name.LocalName,\"{1}\",\"{2}\",\"{3}\",\"{4}\",\"{5}\",\"{6}\",\"{7}\",\"{8}\",\"{9}\",\"{10}\",\"{11}\",\"{12}\",{13});", map.a, mClassS.item, mClassS.itemrevision, mClassS.masterform, mClassS.masterformS, mClassS.masterformRev, mClassS.masterformRevS, mClassT.item, mClassT.itemrevision, mClassT.masterform, mClassT.masterformS, mClassT.masterformRev, mClassT.masterformRevS, (int)sRule);
+                            //MapCode.AppendFormat(" _TCPropagateItem({0},\"{1}\",\"{2}\",\"{3}\",\"{4}\",\"{5}\",\"{6}\",\"{7}\",\"{8}\",\"{9}\",\"{10}\",\"{11}\",\"{12}\",{13});", map.a, mClassS.item, mClassS.itemrevision, mClassS.masterform, mClassS.masterformS, mClassS.masterformRev, mClassS.masterformRevS, mClassT.item, mClassT.itemrevision, mClassT.masterform, mClassT.masterformS, mClassT.masterformRev, mClassT.masterformRevS, (int)sRule);
                             break;
                         case "itemrevitemrev|yes":
-                            MapCode.AppendFormat(" if({0}.Name.LocalName != \"{13}\")_TCPropagateItemRevision({0},\"{1}\",\"{2}\",\"{3}\",\"{4}\",\"{5}\",\"{6}\",\"{7}\",\"{8}\",\"{9}\",\"{10}\",\"{11}\",\"{12}\",{14});", map.a, mClassS.item, mClassS.itemrevision, mClassS.masterform, mClassS.masterformS, mClassS.masterformRev, mClassS.masterformRevS, mClassT.item, mClassT.itemrevision, mClassT.masterform, mClassT.masterformS, mClassT.masterformRev, mClassT.masterformRevS, map.b, (int)sRule);
+                            MapCode.AppendFormat(" _FastTCPropagateItem({0}.Name.LocalName,\"{1}\",\"{2}\",\"{3}\",\"{4}\",\"{5}\",\"{6}\",\"{7}\",\"{8}\",\"{9}\",\"{10}\",\"{11}\",\"{12}\",{13});", map.a, mClassS.item, mClassS.itemrevision, mClassS.masterform, mClassS.masterformS, mClassS.masterformRev, mClassS.masterformRevS, mClassT.item, mClassT.itemrevision, mClassT.masterform, mClassT.masterformS, mClassT.masterformRev, mClassT.masterformRevS, (int)sRule);
+                            //MapCode.AppendFormat(" if({0}.Name.LocalName != \"{13}\")_TCPropagateItemRevision({0},\"{1}\",\"{2}\",\"{3}\",\"{4}\",\"{5}\",\"{6}\",\"{7}\",\"{8}\",\"{9}\",\"{10}\",\"{11}\",\"{12}\",{14});", map.a, mClassS.item, mClassS.itemrevision, mClassS.masterform, mClassS.masterformS, mClassS.masterformRev, mClassS.masterformRevS, mClassT.item, mClassT.itemrevision, mClassT.masterform, mClassT.masterformS, mClassT.masterformRev, mClassT.masterformRevS, map.b, (int)sRule);
                             break;
                         default:
                             MapCode.AppendFormat(" {1}.Name = _ns + \"{2}\";{1}.SetAttrValue(\"object_type\",\"{2}\");", mquery, map.a, map.b);
@@ -207,7 +240,7 @@ namespace SMU_Mapper.Classes
                     }
 
                     MapCode.AppendFormat("if({0}.Attribute(\"puid\") != null) _RecordTypeChange({0}.Attribute(\"puid\").Value,\"{1}\",\"{2}\");", map.a, map.a, map.b);
-                }
+                }*/
             }
 
             //Iteration
@@ -243,20 +276,9 @@ namespace SMU_Mapper.Classes
                 }
             }
 
-
-
             MapCode.AppendLine(Tasks.ToString());
             MapCode.AppendLine("}");
-            //}
-
-            /*Fast Propagate
-            if (map.a != map.b && map.srccheck == null && map.mapclass=="yes")
-            {
-                if (mClassS != null && mClassT != null)
-                {
-                    MapCode.AppendFormat(" _FastTCPropagateItem(\"{0}\",\"{1}\",\"{2}\",\"{3}\",\"{4}\",\"{5}\",\"{6}\",\"{7}\",\"{8}\",\"{9}\",\"{10}\",\"{11}\");", mClassS.item, mClassS.itemrevision, mClassS.masterform, mClassS.masterformS, mClassS.masterformRev, mClassS.masterformRevS, mClassT.item, mClassT.itemrevision, mClassT.masterform, mClassT.masterformS, mClassT.masterformRev, mClassT.masterformRevS);
-                }
-            }*/
+           
 
             return MapCode;
         }
@@ -1184,7 +1206,7 @@ namespace SMU_Mapper.Classes
                         string logfile = System.Text.RegularExpressions.Regex.Match(log,""{12}"").Groups[1].Value;
                         Global.LogFile = new StreamWriter(logfile, false);
                         Global.LogFile.AutoFlush = true;
-                    }}
+                    }}else {{Global.LogFile = new StreamWriter(""out.log"", false);Global.LogFile.AutoFlush = true;}}
 
                     if (args.Contains(""-warn"")) Global._DisableWarnings = false;
                     Stopwatch stopWatch = new Stopwatch();
@@ -1194,9 +1216,31 @@ namespace SMU_Mapper.Classes
 
                     int _maxCount = {8};
                     bool db_result = CreateDatabase(Classes.recordedClasses);
-                   
-                    (""Loading XML - "" + args[0]).Print();
-                    try{{{0} = XElement.Load(args[0]);}}
+
+                    string[] files = new string[] {{ }};
+                    bool isDirectory = false;
+
+                    if (Directory.Exists(args[0])){{
+                        isDirectory = true;
+                        if (!Directory.Exists(args[1]))
+                        Global._errList.Add(new ErrorList.ErrorInfo(0, ErrorCodes.DIRECTORY_NOT_FOUND, """", """", TCTypes.General, """")); 
+                        
+                        files = Directory.GetFiles(args[0], ""*.xml"");
+                    }}
+                    else if (File.Exists(args[0])){{
+                        files = new string[] {{args[0]}};
+                    }}
+                    
+
+            if (files.Count() == 0) {{ Global._errList.Add(new ErrorList.ErrorInfo(0, ErrorCodes.XML_NOT_FOUND, """", """", TCTypes.General, """")); }}
+
+            foreach (var file in files)
+            {{
+                     Global._errList.Clear();                   
+
+
+                    (""Loading XML - "" + file).Print();
+                    try{{{0} = XElement.Load(file);}}
                     catch (IOException)
                     {{
                         Global._errList.Add(new ErrorList.ErrorInfo(0, ErrorCodes.XML_NOT_FOUND, """", """", TCTypes.General, """"));
@@ -1219,30 +1263,36 @@ namespace SMU_Mapper.Classes
                     Classes._IMAN_master_form = _IMAN_master_form;
 
                     (""Updating Stubs"").Print();
-                     _UpdateStubs();
+                     //_UpdateStubs();
 
                      Classes._ReadXML();
                     (""Caching Complete"").Print();
 
-                    Global.initElemID(_xml);
+                    //Global.initElemID(_xml);
 
                     {2}
 
-                    _AddChangeToDB();
-                    _ReconcileLocalStubs();
+                    //_AddChangeToDB();
+                    //_ReconcileLocalStubs();
 
                     (""Saving mapped XML - "" + args[1]).Print();
-                    {0}.Save(args[1]);
+                    if(isDirectory)
+                        {0}.Save(Path.Combine(args[1],Path.GetFileName(file)));
+                    else
+                        {0}.Save(args[1]);
+
+                    
+                    System.Console.WriteLine(""Writing log file"");
+                    ("""").Print();   
+
+                    Global._errList.Print();
+                }}
 
                     stopWatch.Stop();
                     System.TimeSpan ts = stopWatch.Elapsed;
                     string elapsedTime = System.String.Format(""{{0:00}}:{{1:00}}.{{2:00}}"",ts.Minutes, ts.Seconds,ts.Milliseconds / 10);
                     (""Total Duration - "" + elapsedTime).Print();
 
-                    System.Console.WriteLine(""Writing log file"");
-                    ("""").Print();   
-
-                    Global._errList.Print();
                     Global.LogFile.Close();
 
                     return 0;

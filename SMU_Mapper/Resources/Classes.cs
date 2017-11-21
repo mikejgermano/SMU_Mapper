@@ -46,11 +46,21 @@ static class Classes
 
     static private XElement[] _getMasterForm(XElement obj, string StorageClass)
     {
-        var islandElements = Islands[obj.Attribute("island_id").Value];
+        //var islandElements = Islands[obj.Attribute("island_id").Value];
+        IEnumerable<XElement> IM;
+        Islands.TryGetValue("ImanRelation", out IM);
+        IEnumerable<XElement> Form;
+        Islands.TryGetValue("Form", out Form);
+        IEnumerable<XElement> FormS;
+        Islands.TryGetValue(StorageClass, out FormS);
 
-        var MasterForm = (from im in islandElements.Where(x => x.Name.LocalName == "ImanRelation")
-                          join mForm in islandElements.Where(x => x.Name.LocalName == "Form") on im.Attribute("secondary_object").Value equals mForm.Attribute("puid").Value
-                          join mFormS in islandElements.Where(x => x.Name.LocalName == StorageClass) on mForm.Attribute("data_file").Value equals mFormS.Attribute("puid").Value into mf1
+        IM = IM ?? Enumerable.Empty<XElement>();
+        Form = Form ?? Enumerable.Empty<XElement>();
+        FormS = FormS ?? Enumerable.Empty<XElement>();
+
+        var MasterForm = (from im in IM
+                          join mForm in Form on im.Attribute("secondary_object").Value equals mForm.Attribute("puid").Value
+                          join mFormS in FormS on mForm.Attribute("data_file").Value equals mFormS.Attribute("puid").Value into mf1
                           from mFormS in mf1.DefaultIfEmpty()
                           where obj.Attribute("puid").Value == im.Attribute("primary_object").Value && im.Attribute("relation_type").Value == _IMAN_master_form
                           select new XElement[2] { mForm, mFormS }).SingleOrDefault();
@@ -73,9 +83,11 @@ static class Classes
 
         private static IEnumerable<Classes.RevisionClass> _getItemRevisions(XElement item, string sRev, string StorageClass)
         {
-            var islandElements = Islands[item.Attribute("island_id").Value];
+            IEnumerable<XElement> Rev;
+            Islands.TryGetValue(sRev, out Rev);
+            Rev = Rev ?? Enumerable.Empty<XElement>();
 
-            var Revisions = (from rev in islandElements.Where(x => x.Name.LocalName == sRev)
+            var Revisions = (from rev in Rev
                              where rev.Attribute("items_tag").Value == item.Attribute("puid").Value
                              select new Classes.RevisionClass { element = rev, masterRevForm = new RevisionClass.ItemRevMasterFormClass() }).ToList();
 
@@ -149,11 +161,14 @@ static class Classes
 
         private static ItemClass _getItem(XElement rev, string sitem, string srev, string sMasterFormS, string smasterRevFormS)
         {
-            var islandElements = Islands[rev.Attribute("island_id").Value];
+            //var islandElements = Islands[rev.Attribute("island_id").Value];
+            IEnumerable<XElement> Item;
+            Islands.TryGetValue(sitem, out Item);
+            Item = Item ?? Enumerable.Empty<XElement>();
 
             try
             {
-                ItemClass qItem = (from item in islandElements.Where(x => x.Name.LocalName == sitem)
+                ItemClass qItem = (from item in Item
                                    where item.Attribute("puid").Value == rev.Attribute("items_tag").Value
                                    select new ItemClass(item, srev, sMasterFormS, smasterRevFormS)).SingleOrDefault();
 
@@ -182,6 +197,7 @@ static class Classes
 
     public static void _ReadXML()
     {
+        Islands.Clear();
         int bound0 = classes.GetUpperBound(0);
         List<string> ItemList = new List<string>(bound0);
         List<string> RevList = new List<string>(bound0);
@@ -212,7 +228,7 @@ static class Classes
 
         var islandData = from el in _xml.Elements()
                          where masterList.Contains(el.Name.LocalName) || (el.Name.LocalName != "POM_stub" && el.Attribute("object_type") != null && formList.Contains(el.Attribute("object_type").Value))
-                         group el by el.Attribute("island_id").Value into g
+                         group el by el.Name.LocalName into g
                          orderby g.Key
                          select g;
 

@@ -431,8 +431,16 @@ private static void _TCPropagateItem(XElement _item, string sItem, string sRev, 
 
     if (secondaryRule == 1)
     {
-        sItemClass = "Item";
-        sRevClass = "ItemRevision";
+        sItemClass = _item.Name.LocalName;
+
+        for (int i = 0; i < Classes.classes.Length; i++)
+        {
+            if (Classes.classes[i, 0] == sItemClass)
+            {
+                sRevClass = Classes.classes[i, 1];
+                break;
+            }
+        }
     }
     else if (secondaryRule == 2)
     {
@@ -513,8 +521,16 @@ private static void _TCPropagateItemRevision(XElement _rev, string sItem, string
 
     if (secondaryRule == 1)
     {
-        sItemClass = "Item";
-        sRevClass = "ItemRevision";
+        sRevClass = _rev.Name.LocalName;
+
+        for (int i = 0; i < Classes.classes.Length; i++)
+        {
+            if (Classes.classes[i, 1] == sItemClass)
+            {
+                sItemClass = Classes.classes[i, 0];
+                break;
+            }
+        }
     }
     else if (secondaryRule == 2)
     {
@@ -588,14 +604,120 @@ private static void _TCPropagateItemRevision(XElement _rev, string sItem, string
     }
 }
 
-private static void _FastTCPropagateItem(string sItem, string sRev, string sMasterForm, string sMasterFormS, string sMasterRevForm, string sMasterRevFormS, string tItem, string tRevision, string tMasterForm, string tMasterFormS, string tMasterRevForm, string tMasterRevFormS)
+private static void _FastTCPropagateItem(string SrcClass, string TrgtClass, string sItem, string sRev, string sMasterForm, string sMasterFormS, string sMasterRevForm, string sMasterRevFormS, string tItem, string tRevision, string tMasterForm, string tMasterFormS, string tMasterRevForm, string tMasterRevFormS,int secondaryRule)
 {
-    var items = _xml.Elements(_ns + sItem);
+
+    string sItemClass = SrcClass;
+    string sRevClass = sRev;
+    string tItemClass = TrgtClass;
+    string tRevClass = tRevision;
+
+    if (secondaryRule == 1)
+    {
+
+        for (int i = 0; i < Classes.classes.Length; i++)
+        {
+            if (Classes.classes[i, 0] == sItemClass)
+            {
+                sRevClass = Classes.classes[i, 1];
+                break;
+            }
+        }
+    }
+    else if (secondaryRule == 2)
+    {
+        for (int i = 0; i < Classes.classes.Length; i++)
+        {
+            if (Classes.classes[i, 0] == tItemClass)
+            {
+                tRevClass = Classes.classes[i, 1];
+                break;
+            }
+        }
+    }
+    else if (secondaryRule == 3)
+    {
+        for (int i = 0; i < Classes.classes.Length; i++)
+        {
+            if (Classes.classes[i, 0] == sItemClass)
+            {
+                sRevClass = Classes.classes[i, 1];
+                break;
+            }
+        }
+
+        for (int i = 0; i < Classes.classes.Length; i++)
+        {
+            if (Classes.classes[i, 0] == tItemClass)
+            {
+                tRevClass = Classes.classes[i, 1];
+                break;
+            }
+        }
+    }
+
+    //POM_Stubs
+    //Item
+    var stubs = from stub in _xml.Elements(_ns + "POM_stub")
+                where stub.GetAttrValue("object_class") == sItemClass && stub.GetAttrValue("object_type") == sItem
+                select stub;
+    foreach (var stub in stubs)
+    {
+        stub.SetAttrValue("object_class", tItemClass);
+        stub.SetAttrValue("object_type", tItem);
+    }
+    //ItemRevision
+    stubs = from stub in _xml.Elements(_ns + "POM_stub")
+            where stub.GetAttrValue("object_class") == sRevClass && stub.GetAttrValue("object_type") == sRev
+            select stub;
+    foreach (var stub in stubs)
+    {
+        stub.SetAttrValue("object_class", tRevClass);
+        stub.SetAttrValue("object_type", tRevision);
+    }
+    //ItemMasterForm
+    stubs = from stub in _xml.Elements(_ns + "POM_stub")
+            where stub.GetAttrValue("object_class") == "Form" && stub.GetAttrValue("object_type") == sMasterForm
+            select stub;
+    foreach (var stub in stubs)
+    {
+        stub.SetAttrValue("object_type", tMasterForm);
+    }
+    //ItemMasterFormS
+    stubs = from stub in _xml.Elements(_ns + "POM_stub")
+            where stub.GetAttrValue("object_class") == sMasterFormS && stub.GetAttrValue("object_type") == sMasterFormS
+            select stub;
+    foreach (var stub in stubs)
+    {
+        stub.SetAttrValue("object_class", tMasterFormS);
+        stub.SetAttrValue("object_type", tMasterFormS);
+    }
+    //ItemRevMasterForm
+    stubs = from stub in _xml.Elements(_ns + "POM_stub")
+            where stub.GetAttrValue("object_class") == "Form" && stub.GetAttrValue("object_type") == sMasterRevForm
+            select stub;
+    foreach (var stub in stubs)
+    {
+        stub.SetAttrValue("object_type", tMasterRevForm);
+    }
+    //ItemRevMasterFormS
+    stubs = from stub in _xml.Elements(_ns + "POM_stub")
+            where stub.GetAttrValue("object_class") == sMasterRevFormS && stub.GetAttrValue("object_type") == sMasterRevFormS
+            select stub;
+    foreach (var stub in stubs)
+    {
+        stub.SetAttrValue("object_class", tMasterRevFormS);
+        stub.SetAttrValue("object_type", tMasterRevFormS);
+    }
+
+
+
+    var items = _xml.Elements(_ns + sItemClass);
     foreach (var tc in items)
     {
         _RecordTypeChange(tc.Attribute("puid").Value, sItem, tItem);
         tc.SetAttributeValue("object_type", tItem);
-        tc.Name = _ns + tItem;
+        tc.Name = _ns + tItemClass;
     }
 
     var masterforms = from mf in _xml.Elements(_ns + "Form")
@@ -615,12 +737,12 @@ private static void _FastTCPropagateItem(string sItem, string sRev, string sMast
         tc.Name = _ns + tMasterFormS;
     }
 
-    var revisions = _xml.Elements(_ns + sRev);
+    var revisions = _xml.Elements(_ns + sRevClass);
     foreach (var tc in revisions)
     {
         _RecordTypeChange(tc.Attribute("puid").Value, sRev, tRevision);
         tc.SetAttributeValue("object_type", tRevision);
-        tc.Name = _ns + tRevision;
+        tc.Name = _ns + tRevClass;
     }
 
     var masterrevforms = from mf in _xml.Elements(_ns + "Form")

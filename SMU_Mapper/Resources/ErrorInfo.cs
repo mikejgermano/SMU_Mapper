@@ -1,5 +1,10 @@
 ﻿public enum ErrorCodes
 {
+    ///<summary>Out argument must be a Directory</summary>
+    [Description("Out argument is not a valid Directory")]
+    [ErrorType(ErrorTypes.FatalError)]
+    DIRECTORY_NOT_FOUND,
+
     ///<summary>Could not find XML file in the specified path</summary>
     [Description("Could not find XML file in the specified path")]
     [ErrorType(ErrorTypes.FatalError)]
