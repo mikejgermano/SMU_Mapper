@@ -604,7 +604,16 @@ private static void _TCPropagateItemRevision(XElement _rev, string sItem, string
     }
 }
 
-private static void _FastTCPropagateItem(string SrcClass, string TrgtClass, string sItem, string sRev, string sMasterForm, string sMasterFormS, string sMasterRevForm, string sMasterRevFormS, string tItem, string tRevision, string tMasterForm, string tMasterFormS, string tMasterRevForm, string tMasterRevFormS,int secondaryRule)
+private static void _ChangeClass(string SrcClass,string TrgtClass)
+{
+    var _query = _xml.Elements(_ns + SrcClass);
+    foreach(var el in _query)
+    {
+        el.Name = _ns + TrgtClass;
+    }
+}
+
+private static void _FastTCPropagateItem(string SrcClass, string TrgtClass, string sItem, string sRev, string sMasterForm, string sMasterFormS, string sMasterRevForm, string sMasterRevFormS, string tItem, string tRevision, string tMasterForm, string tMasterFormS, string tMasterRevForm, string tMasterRevFormS, int secondaryRule)
 {
 
     string sItemClass = SrcClass;
@@ -712,7 +721,7 @@ private static void _FastTCPropagateItem(string SrcClass, string TrgtClass, stri
 
 
 
-    var items = _xml.Elements(_ns + sItemClass);
+    var items = _xml.Elements(_ns + sItemClass).Where(x => x.GetAttrValue("object_type") == sItem);
     foreach (var tc in items)
     {
         _RecordTypeChange(tc.Attribute("puid").Value, sItem, tItem);
@@ -737,7 +746,7 @@ private static void _FastTCPropagateItem(string SrcClass, string TrgtClass, stri
         tc.Name = _ns + tMasterFormS;
     }
 
-    var revisions = _xml.Elements(_ns + sRevClass);
+    var revisions = _xml.Elements(_ns + sRevClass).Where(x => x.GetAttrValue("object_type") == sRev);
     foreach (var tc in revisions)
     {
         _RecordTypeChange(tc.Attribute("puid").Value, sRev, tRevision);
@@ -794,7 +803,6 @@ public static void _MapRefType(string refType, string refAttr, Dictionary<string
         case "Role":
         case "UnitOfMeasure":
         case "ImanVolume":
-        case "DatasetType":
         case "Tool":
             _query = _xml.Elements(_ns + refType);
 
@@ -806,6 +814,46 @@ public static void _MapRefType(string refType, string refAttr, Dictionary<string
                 if (refVal != null)
                     m.SetAttrValue(refAttr, refVal);
             }
+            break;
+        case "DatasetType":
+            _query = _xml.Elements(_ns + refType);
+
+            foreach (var m in _query)
+            {
+                string refVal = null;
+                valLookup.TryGetValue(m.GetAttrValue(refAttr), out refVal);
+
+                if (refVal != null)
+                {
+                    string currentType = m.GetAttrValue(refAttr);
+                    m.SetAttrValue(refAttr, refVal);
+                }
+            }
+
+
+            var datasets = from dset in _xml.Elements(_ns + "Dataset")
+                           where valLookup.ContainsKey(dset.GetAttrValue("object_type"))
+                           select dset;
+
+            foreach (var dset in datasets)
+            {
+                string refVal = null;
+                valLookup.TryGetValue(dset.GetAttrValue("object_type"), out refVal);
+                dset.SetAttrValue("object_type", refVal);
+            }
+
+
+            var stubs = from stub in _xml.Elements(_ns + "POM_stub")
+                        where valLookup.ContainsKey(stub.GetAttrValue("object_type"))
+                        select stub;
+
+            foreach (var stub in stubs)
+            {
+                string refVal = null;
+                valLookup.TryGetValue(stub.GetAttrValue("object_type"), out refVal);
+                stub.SetAttrValue("object_type", refVal);
+            }
+
             break;
         case "ImanType":
             _query = _xml.Elements(_ns + refType);

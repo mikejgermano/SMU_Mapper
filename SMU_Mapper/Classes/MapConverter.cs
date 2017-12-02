@@ -120,8 +120,8 @@ namespace SMU_Mapper.Classes
             SecondaryMapRules sRule = getSecondaryMapRule(mClassS, mClassT);
 
             //Query
-            string query = "{0} = from {3} in _xml.Elements(_ns + \"{1}\") {4} {2} select {5};";
-            string query_wildcard = "{0} = from {1} in _xml.Elements() {2} select {1};";
+            string query = "{0} = (from {3} in _xml.Elements(_ns + \"{1}\") {4} {2} select {5}).ToArray();";
+            string query_wildcard = "{0} = (from {1} in _xml.Elements() {2} select {1}).ToArray();";
 
             //Joins
             string joins = "";
@@ -193,6 +193,9 @@ namespace SMU_Mapper.Classes
                         break;
                     case "itemrevitemrev|yes":
                         MapCode.AppendFormat($@"_FastTCPropagateItem(""{map.a}"",""{tClassSecondType}"", ""{mClassS.item}"", ""{mClassS.itemrevision}"", ""{mClassS.masterform}"", ""{mClassS.masterformS}"", ""{mClassS.masterformRev}"", ""{mClassS.masterformRevS}"", ""{mClassT.item}"", ""{mClassT.itemrevision}"", ""{mClassT.masterform}"", ""{mClassT.masterformS}"", ""{mClassT.masterformRev}"", ""{mClassT.masterformRevS}"", {(int)sRule});");
+                        break;
+                    case "|yes":
+                        MapCode.AppendLine($@"_ChangeClass(""{map.a}"",""{map.b}"");");
                         break;
                 }
             }
