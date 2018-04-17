@@ -64,7 +64,7 @@ namespace SMU_Mapper.Classes
             string[] _DontChangeName = new string[] { "Dataset", "Form" };
             bool hasWildcard = false;
 
-            Validate(map,i);
+            Validate(map, i);
 
 
             //If wildcard is used
@@ -101,7 +101,7 @@ namespace SMU_Mapper.Classes
             //Change other TC Class types
             string tcTypeS = model.getTcType(map.a);
 
-            
+
             ModelClass mClassS = null;
 
             if (tcTypeS != "")
@@ -137,7 +137,7 @@ namespace SMU_Mapper.Classes
                 //build Where
                 where = ConvertIf(map.a, map.srccheck);
             }
-            else if(map.srccheck == null && sClassIsSecond == true)
+            else if (map.srccheck == null && sClassIsSecond == true)
             {
                 SrcCheck srcC = new SrcCheck();
                 srcC.@if = $"@object_type = '{map.a}'";
@@ -173,7 +173,7 @@ namespace SMU_Mapper.Classes
                 else
                     queryBuild = "var " + String.Format(query, mquery, map.a, where, map.a, joins, select);
             }
-           
+
 
             MapCode.AppendLine(queryBuild);
 
@@ -199,7 +199,7 @@ namespace SMU_Mapper.Classes
                         break;
                 }
             }
-            
+
 
             //Start the itteration
 
@@ -218,7 +218,7 @@ namespace SMU_Mapper.Classes
             else
                 MapCode.AppendLine(String.Format("var {0} = el;", map.a, map.b));
 
-           
+
 
             if (map.a != map.b || sClassIsSecond)
             {
@@ -281,20 +281,20 @@ namespace SMU_Mapper.Classes
 
             MapCode.AppendLine(Tasks.ToString());
             MapCode.AppendLine("}");
-           
+
 
             return MapCode;
         }
 
-        private static void Validate(Map map,int i)
+        private static void Validate(Map map, int i)
         {
             //Wild Card
-            if(map.a == "*" || map.b == "*")
+            if (map.a == "*" || map.b == "*")
             {
                 if ((map.a + map.b) != "**")
                     throw new Exception("Error on Map #" + i + ": " + "When using a wildcard both 'a' and 'b' must be '*'");
 
-                if(map.srcjoin != null)
+                if (map.srcjoin != null)
                     throw new Exception("Error on Map #" + i + ": " + "When using a wildcard 'joins' cannot be used");
             }
 
@@ -1207,9 +1207,9 @@ namespace SMU_Mapper.Classes
                     if (log != null)
                     {{
                         string logfile = System.Text.RegularExpressions.Regex.Match(log,""{12}"").Groups[1].Value;
-                        Global.LogFile = new StreamWriter(logfile, false);
+                        Global.LogFile = new StreamWriter(logfile, true);
                         Global.LogFile.AutoFlush = true;
-                    }}else {{Global.LogFile = new StreamWriter(""out.log"", false);Global.LogFile.AutoFlush = true;}}
+                    }}else {{Global.LogFile = new StreamWriter(""out.log"", true);Global.LogFile.AutoFlush = true;}}
 
                     if (args.Contains(""-warn"")) Global._DisableWarnings = false;
                     Stopwatch stopWatch = new Stopwatch();
@@ -1243,13 +1243,24 @@ namespace SMU_Mapper.Classes
 
 
                     (""Loading XML - "" + file).Print();
-                    try{{{0} = XElement.Load(file);}}
+                    try{{
+                        if (isDirectory){{
+                        string SaveFile = Path.Combine(args[1], Path.GetFileName(file));
+
+                        if (File.Exists(SaveFile)) {{
+                            (""Target file already exists in Target Directory - Skipping..."").Print();
+                            continue;
+                        }}
+                        }}{0} = XElement.Load(file);
+                    }}
                     catch (IOException)
                     {{
                         Global._errList.Add(new ErrorList.ErrorInfo(0, ErrorCodes.XML_NOT_FOUND, """", """", TCTypes.General, """"));
+                        continue;
                     }}catch(System.Exception)
                     {{
                         Global._errList.Add(new ErrorList.ErrorInfo(0, ErrorCodes.XML_MALFORMED, """", """",TCTypes.General, """"));
+                        continue;
                     }}
 
                     _ns = {0}.GetDefaultNamespace();

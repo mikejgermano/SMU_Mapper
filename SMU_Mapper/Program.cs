@@ -11,7 +11,7 @@ namespace SMU_Mapper
             try
             {
 
-                DateTime endDT = new DateTime(2018, 1, 15,0, 0, 0, 0, DateTimeKind.Utc);
+                DateTime endDT = new DateTime(2018, 5, 15,0, 0, 0, 0, DateTimeKind.Utc);
 
                 if(DateTime.UtcNow > endDT)
                 {
